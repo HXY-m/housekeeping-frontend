@@ -1,5 +1,5 @@
 import axios from 'axios'
-
+import { useUserStore } from '../store/user'
 // 1. 创建 Axios 实例
 const request = axios.create({
     baseURL: 'http://localhost:8080/api', // 指向你的后端接口基地址
@@ -10,8 +10,8 @@ const request = axios.create({
 request.interceptors.request.use(
     config => {
         // 每次发请求前，去浏览器的本地存储里找找有没有 token
-        const token = localStorage.getItem('token')
-        if (token) {
+        const userStore = useUserStore()
+        if (userStore.token) {
             // 如果有，就塞进请求头里 (严格按照后端的 Bearer 规范)
             config.headers['Authorization'] = `Bearer ${token}`
         }

@@ -63,6 +63,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
+import { getAvailableOrdersAPI, getProOrdersAPI, takeOrderAPI } from '../api/order'
 
 const activeTab = ref('hall') // 默认停留在抢单大厅
 const availableOrders = ref([])
@@ -82,7 +83,7 @@ const handleTabChange = (tab) => {
 // 1. 获取大厅订单
 const fetchAvailableOrders = async () => {
     try {
-        const res = await request.get('/orders/available')
+        const res = await getAvailableOrdersAPI()
         if (res.code === 200) availableOrders.value = res.data
     } catch (error) {
         ElMessage.error('刷新大厅失败')
@@ -108,7 +109,7 @@ const handleTakeOrder = (orderId) => {
     }).then(async () => {
         try {
             // 传递 proId 给后端绑定
-            const res = await request.patch(`/orders/${orderId}/take?proId=${proId}`)
+            const res = await takeOrderAPI(orderId, proId)
             if (res.code === 200) {
                 ElMessage.success('抢单成功！')
                 // 抢单成功后，自动切换到“我的任务”标签页

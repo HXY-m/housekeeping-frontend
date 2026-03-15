@@ -106,11 +106,13 @@ import {
     ShoppingTrolley, Tickets, Briefcase, DataLine,
     SetUp, User, CaretBottom, SwitchButton
 } from '@element-plus/icons-vue'
+import { useUserStore } from '../store/user'
+const userStore = useUserStore()
 
 const router = useRouter()
 const route = useRoute()
-const username = ref('')
-const role = ref('')
+const username = computed(() => userStore.username)
+const role = computed(() => userStore.userRole)
 
 // 获取当前路径，用于菜单高亮
 const currentPath = computed(() => route.path)
@@ -163,7 +165,7 @@ onMounted(() => {
 
 // 退出登录
 const handleLogout = () => {
-    localStorage.clear()
+    userStore.clearUserInfo() // 一键清空缓存
     router.push('/login')
 }
 </script>

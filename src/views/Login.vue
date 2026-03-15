@@ -37,6 +37,10 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../utils/request'
+import { loginAPI, registerAPI } from '../api/auth'
+// 【新增】：引入刚才建好的 Store
+import { useUserStore } from '../store/user'
+const userStore = useUserStore()
 
 const router = useRouter()
 const isLogin = ref(true) // 控制当前是登录表单还是注册表单
@@ -67,7 +71,7 @@ const handleSubmit = async () => {
             // ==========================================
             // 【登录分支】
             // ==========================================
-            const res = await request.post('/auth/login', {
+            const res = await loginAPI({
                 username: formData.value.username,
                 password: formData.value.password
             })
@@ -76,22 +80,15 @@ const handleSubmit = async () => {
                 ElMessage.success('登录成功')
 
                 // 保存 Token 和用户信息到本地缓存
-                localStorage.setItem('token', res.data.token)
-                localStorage.setItem('role', res.data.role)
-                localStorage.setItem('username', res.data.username)
-                localStorage.setItem('userId', res.data.userId)
+                userStore.setUserInfo(res.data)
 
                 // 【防坑核心】：强制转换为数字，防止后端传来的字符串 "1" 导致 === 匹配失败！
-                const userRole = Number(res.data.role)
+                const userRole = Number(userStore.userRole)
 
                 // 根据不同角色跳转到专属的首页
-                if (userRole === 1) {
-                    router.push('/home/dashboard').catch(err => console.error("【跳转被阻止】:", err))
-                } else if (userRole === 2) {
-                    router.push('/home/services').catch(err => console.error("【跳转被阻止】:", err))
-                } else if (userRole === 3) {
-                    router.push('/home/professional-orders').catch(err => console.error("【跳转被阻止】:", err))
-                }
+                if (userRole === 1) router.push('/home/dashboard')
+                else if (userRole === 2) router.push('/home/services')
+                else if (userRole === 3) router.push('/home/professional-orders')
 
             } else {
                 ElMessage.error(res.message)
@@ -101,7 +98,7 @@ const handleSubmit = async () => {
             // ==========================================
             // 【注册分支】
             // ==========================================
-            const res = await request.post('/auth/register', formData.value)
+            const res = await registerAPI(formData.value)
 
             if (res.code === 200) {
                 ElMessage.success('注册成功，请使用新账号登录！')
