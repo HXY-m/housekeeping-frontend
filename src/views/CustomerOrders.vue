@@ -1,171 +1,154 @@
 <template>
-    <div class="orders-view">
-        <h2 style="color: #303133; margin-bottom: 20px;">我的订单</h2>
+    <div class="customer-orders-container">
+        <el-card shadow="never" class="box-card">
+            <template #header>
+                <div class="card-header">
+                    <span style="font-weight: bold; font-size: 18px;">🛒 我的订单历史</span>
+                    <el-button type="primary" plain @click="fetchOrders" icon="Refresh">刷新</el-button>
+                </div>
+            </template>
 
-        <div v-if="orderList.length === 0" class="empty-tips">
-            暂无订单数据，快去预约服务吧！
-        </div>
+            <div v-loading="loading">
+                <el-row :gutter="20">
+                    <el-col :span="12" v-for="order in orderList" :key="order.id" style="margin-bottom: 20px;">
+                        <el-card shadow="hover" class="order-card">
+                            <div class="card-header-inner">
+                                <span class="order-no">订单号：{{ order.orderNo }}</span>
+                                <el-tag v-if="order.orderStatus === 10" type="warning" effect="dark">等待师傅接单</el-tag>
+                                <el-tag v-else-if="order.orderStatus === 20" type="primary" effect="dark">师傅服务中</el-tag>
+                                <el-tag v-else-if="order.orderStatus === 40" type="success" effect="dark">已完单</el-tag>
+                                <el-tag v-else-if="order.orderStatus === 30" type="danger" effect="dark">师傅已拒单</el-tag>
+                                <el-tag v-else type="info" effect="dark">已取消</el-tag>
+                            </div>
 
-        <table v-else class="order-table">
-            <thead>
-                <tr>
-                    <th>订单流水号</th>
-                    <th>服务项目</th>
-                    <th>当前状态</th>
-                    <th>下单时间</th>
-                    <th>操作区</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="order in orderList" :key="order.id">
-                    <td class="font-mono">{{ order.orderNo }}</td>
-                    <td>普通家政 (ID: {{ order.serviceId }})</td>
-                    <td>
-                        <span :class="'status-' + order.orderStatus">
-                            {{ getStatusText(order.orderStatus) }}
-                        </span>
-                    </td>
-                    <td>{{ formatTime(order.createTime) }}</td>
-                    <td>
-                        <el-button v-if="order.orderStatus === 10" type="danger" size="small" plain
-                            @click="handleCancel(order.id)">
-                            取消订单
-                        </el-button>
+                            <div class="card-body">
+                                <p class="price">总金额：<span>¥ {{ order.totalAmount }}</span></p>
+                                <p><strong>📍 服务地址：</strong>{{ order.serviceAddress }}</p>
+                                <p><strong>👤 联系人：</strong>{{ order.contactName }} ({{ order.contactPhone }})</p>
+                                <p><strong>🕒 预约时间：</strong>{{ formatTime(order.createTime) }}</p>
 
-                        <el-button v-else-if="order.orderStatus === 20" type="primary" size="small"
-                            @click="openReviewDialog(order.id)">
-                            验收并评价
-                        </el-button>
+                                <p v-if="order.professionalId"><strong>👨‍🔧 接单师傅：</strong>师傅 ID ({{
+                                    order.professionalId }})</p>
 
-                        <span v-else class="no-action">-</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                                <div v-if="order.orderStatus === 40 && order.ratingScore" class="rating-box">
+                                    <p>我的打分：<el-rate v-model="order.ratingScore" disabled text-color="#ff9900" /></p>
+                                    <p>我的评价：{{ order.customerRemarks || '默认好评' }}</p>
+                                </div>
+                            </div>
 
-        <el-dialog title="服务验收与评价" v-model="reviewDialogVisible" width="400px">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <span style="display: block; margin-bottom: 10px; color: #606266; font-weight: bold;">请为本次服务师傅打分</span>
-                <el-rate v-model="reviewForm.score" size="large" show-score text-color="#ff9900" />
+                            <div class="card-footer" v-if="order.orderStatus === 10">
+                                <el-popconfirm title="确定要取消这个预约吗？" @confirm="handleCancelOrder(order.id)">
+                                    <template #reference>
+                                        <el-button type="danger" plain size="small">取消订单</el-button>
+                                    </template>
+                                </el-popconfirm>
+                            </div>
+
+                            <div class="card-footer" v-if="order.orderStatus === 20">
+                                <el-button type="success" @click="openCompleteDialog(order)">验收并评价</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
+
+                <el-empty v-if="orderList.length === 0 && !loading" description="您还没有预约过服务哦，快去看看吧！">
+                    <el-button type="primary" @click="$router.push('/home/services')">去预约</el-button>
+                </el-empty>
             </div>
+        </el-card>
 
-            <el-input v-model="reviewForm.remarks" type="textarea" :rows="3" placeholder="师傅服务态度好吗？打扫得干净吗？说点什么吧..." />
-
+        <el-dialog title="服务验收与评价" v-model="completeDialogVisible" width="500px">
+            <div v-if="currentOrder" style="margin-bottom: 20px;">
+                <p>订单号：{{ currentOrder.orderNo }}</p>
+                <p>金额：<span style="color: #F56C6C; font-weight: bold;">¥ {{ currentOrder.totalAmount }}</span></p>
+            </div>
+            <el-form :model="completeForm" label-width="80px">
+                <el-form-item label="综合打分">
+                    <el-rate v-model="completeForm.ratingScore" show-score text-color="#ff9900"
+                        score-template="{value} 分" />
+                </el-form-item>
+                <el-form-item label="服务评语">
+                    <el-input v-model="completeForm.customerRemarks" type="textarea" rows="3"
+                        placeholder="师傅的服务让您满意吗？写点什么吧...(选填)" />
+                </el-form-item>
+            </el-form>
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="reviewDialogVisible = false">稍后评价</el-button>
-                    <el-button type="primary" @click="submitReview">提交评价并结单</el-button>
+                    <el-button @click="completeDialogVisible = false">暂不评价</el-button>
+                    <el-button type="primary" @click="submitCompleteOrder">确认验收</el-button>
                 </span>
             </template>
         </el-dialog>
-
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '../utils/request'
+import { ElMessage } from 'element-plus'
+import { getMyOrdersAPI, cancelOrderAPI, completeOrderAPI } from '../api/order'
 
-// --- 响应式数据 ---
 const orderList = ref([])
+const loading = ref(false)
 
-// 评价弹窗相关状态
-const reviewDialogVisible = ref(false)
-const currentOrderId = ref(null)
-const reviewForm = ref({
-    score: 5, // 默认5星好评
-    remarks: ''
+// 评价弹窗状态
+const completeDialogVisible = ref(false)
+const currentOrder = ref(null)
+const completeForm = ref({
+    ratingScore: 5,
+    customerRemarks: ''
 })
 
-// --- 生命周期与初始化 ---
 onMounted(() => {
-    fetchMyOrders()
+    fetchOrders()
 })
 
-const fetchMyOrders = async () => {
+const fetchOrders = async () => {
+    loading.value = true
     try {
-        const res = await request.get('/orders')
+        const res = await getMyOrdersAPI()
         if (res.code === 200) {
             orderList.value = res.data
         }
+    } finally {
+        loading.value = false
+    }
+}
+
+// 客户取消未接单的订单
+const handleCancelOrder = async (orderId) => {
+    try {
+        const res = await cancelOrderAPI(orderId)
+        if (res.code === 200) {
+            ElMessage.success('订单已取消')
+            fetchOrders()
+        } else {
+            ElMessage.error(res.message)
+        }
     } catch (error) {
-        ElMessage.error('获取订单列表失败')
+        console.error('取消异常', error)
     }
 }
 
-// --- 工具函数 ---
-const getStatusText = (status) => {
-    const map = {
-        10: '待接单',
-        20: '服务中(已接单)',
-        30: '已拒单',
-        40: '已完成',
-        50: '已取消'
-    }
-    return map[status] || '未知状态'
+// 打开评价弹窗
+const openCompleteDialog = (order) => {
+    currentOrder.value = order
+    completeForm.value = { ratingScore: 5, customerRemarks: '' } // 重置表单
+    completeDialogVisible.value = true
 }
 
-const formatTime = (timeStr) => {
-    if (!timeStr) return '-'
-    return timeStr.replace('T', ' ').substring(0, 19)
-}
-
-// --- 核心业务逻辑 ---
-
-// 1. 客户取消订单
-const handleCancel = (orderId) => {
-    ElMessageBox.confirm(
-        '确定要取消这个订单吗？取消后师傅将无法接单。',
-        '取消确认',
-        {
-            confirmButtonText: '确定取消',
-            cancelButtonText: '暂不取消',
-            type: 'warning'
-        }
-    ).then(async () => {
-        try {
-            const res = await request.patch(`/orders/${orderId}/cancel`)
-            if (res.code === 200) {
-                ElMessage.success('订单已成功取消！')
-                fetchMyOrders() // 刷新列表
-            } else {
-                ElMessage.error(res.message)
-            }
-        } catch (error) {
-            console.error('取消异常', error)
-        }
-    }).catch(() => {
-        // 点击取消不做处理
-    })
-}
-
-// 2. 打开评价弹窗
-const openReviewDialog = (orderId) => {
-    currentOrderId.value = orderId
-    // 每次打开清空上次的评价内容
-    reviewForm.value = { score: 5, remarks: '' }
-    reviewDialogVisible.value = true
-}
-
-// 3. 提交评价并结单
-const submitReview = async () => {
-    if (reviewForm.value.score === 0) {
-        ElMessage.warning('请至少给师傅打1颗星哦！')
+// 提交验收与评价
+const submitCompleteOrder = async () => {
+    if (!completeForm.value.ratingScore) {
+        ElMessage.warning('请至少给师傅打个星级吧！')
         return
     }
 
     try {
-        // 假设后端验收接口支持接收评分和评语
-        const res = await request.patch(`/orders/${currentOrderId.value}/completion`, {
-            ratingScore: reviewForm.value.score,
-            customerRemarks: reviewForm.value.remarks
-        })
-
+        const res = await completeOrderAPI(currentOrder.value.id, completeForm.value)
         if (res.code === 200) {
-            ElMessage.success('验收成功！感谢您的评价。')
-            reviewDialogVisible.value = false // 关闭弹窗
-            fetchMyOrders() // 刷新列表，此时状态应变为已完成(40)
+            ElMessage.success('🎉 验收成功，感谢您的评价！')
+            completeDialogVisible.value = false
+            fetchOrders() // 刷新列表查看最新状态
         } else {
             ElMessage.error(res.message)
         }
@@ -173,94 +156,75 @@ const submitReview = async () => {
         console.error('验收异常', error)
     }
 }
+
+// 时间格式化工具
+const formatTime = (timeStr) => {
+    if (!timeStr) return '-'
+    return timeStr.replace('T', ' ').substring(0, 16)
+}
 </script>
 
 <style scoped>
-.orders-view {
-    background-color: #fff;
-    padding: 20px;
+.customer-orders-container {
+    padding: 10px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-card {
     border-radius: 8px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+    position: relative;
 }
 
-/* 空状态提示 */
-.empty-tips {
-    text-align: center;
-    padding: 50px 0;
-    color: #909399;
-    font-size: 16px;
-    background-color: #f8f9fa;
-    border-radius: 4px;
+.card-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ebeef5;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
 }
 
-/* 表格基础样式 */
-.order-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.order-table th,
-.order-table td {
-    border: 1px solid #ebeef5;
-    padding: 12px 15px;
-    text-align: left;
+.order-no {
     font-size: 14px;
+    color: #909399;
+    font-family: monospace;
+}
+
+.card-body p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #303133;
+}
+
+.card-body .price {
+    font-size: 16px;
+    font-weight: bold;
     color: #606266;
 }
 
-.order-table th {
-    background-color: #f5f7fa;
-    color: #303133;
-    font-weight: bold;
+.card-body .price span {
+    color: #F56C6C;
+    font-size: 20px;
 }
 
-.order-table tr:hover {
-    background-color: #f5f7fa;
+.card-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ebeef5;
+    display: flex;
+    justify-content: flex-end;
 }
 
-/* 订单号等宽字体，更显专业 */
-.font-mono {
-    font-family: Consolas, Monaco, monospace;
-    color: #909399;
-}
-
-/* 状态颜色标签 */
-.status-10 {
-    color: #e6a23c;
-    font-weight: bold;
-}
-
-/* 待接单：橙色 */
-.status-20 {
-    color: #409eff;
-    font-weight: bold;
-}
-
-/* 服务中：蓝色 */
-.status-30 {
-    color: #f56c6c;
-    font-weight: bold;
-    text-decoration: line-through;
-}
-
-/* 已拒单：红色 */
-.status-40 {
-    color: #67c23a;
-    font-weight: bold;
-}
-
-/* 已完成：绿色 */
-.status-50 {
-    color: #909399;
-    font-weight: bold;
-}
-
-/* 已取消：灰色 */
-
-/* 占位符操作区 */
-.no-action {
-    color: #c0c4cc;
-    font-size: 14px;
+.rating-box {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fafafa;
+    border-radius: 4px;
+    border-left: 4px solid #409eff;
 }
 </style>

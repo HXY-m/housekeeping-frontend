@@ -1,156 +1,226 @@
 <template>
-    <div class="pro-workspace">
-        <h2 style="color: #303133; margin-bottom: 20px;">师傅工作台</h2>
+    <div class="pro-orders-container">
+        <el-card shadow="never" class="box-card">
+            <el-tabs v-model="activeTab" @tab-change="handleTabChange">
 
-        <el-tabs v-model="activeTab" class="custom-tabs" @tab-click="handleTabChange">
-            <el-tab-pane label="🚀 抢单大厅" name="hall">
-                <div v-if="availableOrders.length === 0" class="empty-tips">
-                    当前大厅没有新的派单，去喝杯茶休息一下吧~
-                </div>
+                <el-tab-pane label="🔥 抢单大厅" name="hall">
+                    <div v-loading="loadingHall">
+                        <el-row :gutter="20">
+                            <el-col :span="12" v-for="order in hallOrders" :key="order.id" style="margin-bottom: 20px;">
+                                <el-card shadow="hover" class="order-card">
+                                    <div class="card-header">
+                                        <span class="order-no">订单号：{{ order.orderNo }}</span>
+                                        <el-tag type="warning" effect="dark">待抢单</el-tag>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="price">💰 订单金额：<span>¥ {{ order.totalAmount }}</span></p>
+                                        <p><strong>📍 服务地址：</strong>{{ order.serviceAddress }}</p>
+                                        <p><strong>👤 联系人：</strong>{{ order.contactName }} ({{ order.contactPhone }})
+                                        </p>
+                                        <p><strong>🕒 发起时间：</strong>{{ formatTime(order.createTime) }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <el-button type="primary" size="large" @click="handleAcceptOrder(order.id)">
+                                            ⚡ 立即抢单
+                                        </el-button>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                        <el-empty v-if="hallOrders.length === 0 && !loadingHall" description="大厅暂无新订单，稍后再来看看吧~" />
+                    </div>
+                </el-tab-pane>
 
-                <el-table v-else :data="availableOrders" border stripe style="width: 100%">
-                    <el-table-column prop="orderNo" label="订单流水号" width="220" />
-                    <el-table-column label="服务项目" width="200">
-                        <template #default="scope">普通家政 (ID: {{ scope.row.serviceId }})</template>
-                    </el-table-column>
-                    <el-table-column label="下单时间" width="180">
-                        <template #default="scope">{{ formatTime(scope.row.createTime) }}</template>
-                    </el-table-column>
-                    <el-table-column label="操作" align="center">
-                        <template #default="scope">
-                            <el-button type="success" size="large" @click="handleTakeOrder(scope.row.id)">
-                                ⚡ 立即抢单
-                            </el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
+                <el-tab-pane label="📋 我的任务" name="my">
+                    <div v-loading="loadingMy">
+                        <el-row :gutter="20">
+                            <el-col :span="12" v-for="order in myOrders" :key="order.id" style="margin-bottom: 20px;">
+                                <el-card shadow="hover" class="order-card">
+                                    <div class="card-header">
+                                        <span class="order-no">订单号：{{ order.orderNo }}</span>
+                                        <el-tag v-if="order.orderStatus === 10" type="danger"
+                                            effect="dark">客户指定待接</el-tag>
+                                        <el-tag v-else-if="order.orderStatus === 20" type="primary"
+                                            effect="dark">服务中</el-tag>
+                                        <el-tag v-else-if="order.orderStatus === 40" type="success"
+                                            effect="dark">已完成</el-tag>
+                                        <el-tag v-else-if="order.orderStatus === 30" type="info"
+                                            effect="dark">已拒单</el-tag>
+                                        <el-tag v-else type="info">已取消</el-tag>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="price">💰 订单金额：<span>¥ {{ order.totalAmount }}</span></p>
+                                        <p><strong>📍 服务地址：</strong>{{ order.serviceAddress }}</p>
+                                        <p><strong>👤 联系人：</strong>{{ order.contactName }} ({{ order.contactPhone }})
+                                        </p>
+                                        <p><strong>🕒 发起时间：</strong>{{ formatTime(order.createTime) }}</p>
 
-            <el-tab-pane label="📋 我的任务" name="my">
-                <div v-if="myOrders.length === 0" class="empty-tips">
-                    您还没有接单，快去大厅看看吧！
-                </div>
+                                        <div v-if="order.orderStatus === 40 && order.ratingScore" class="rating-box">
+                                            <p><strong>⭐ 客户打分：</strong>{{ order.ratingScore }} 分</p>
+                                            <p><strong>📝 客户留言：</strong>{{ order.customerRemarks || '无' }}</p>
+                                        </div>
+                                    </div>
 
-                <el-table v-else :data="myOrders" border style="width: 100%">
-                    <el-table-column prop="orderNo" label="订单流水号" width="220" />
-                    <el-table-column label="状态" width="120" align="center">
-                        <template #default="scope">
-                            <el-tag v-if="scope.row.orderStatus === 20" type="primary">服务中</el-tag>
-                            <el-tag v-else-if="scope.row.orderStatus === 40" type="success">已完成</el-tag>
-                            <el-tag v-else type="info">未知状态</el-tag>
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="接单时间" width="180">
-                        <template #default="scope">{{ formatTime(scope.row.updateTime) }}</template>
-                    </el-table-column>
-                    <el-table-column label="客户评价" show-overflow-tooltip>
-                        <template #default="scope">
-                            <span v-if="scope.row.orderStatus === 40 && scope.row.ratingScore" style="color: #e6a23c;">
-                                ★ {{ scope.row.ratingScore }} 星好评
-                            </span>
-                            <span v-else-if="scope.row.orderStatus === 40">客户未评价</span>
-                            <span v-else style="color: #909399;">等待客户验收...</span>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
-        </el-tabs>
+                                    <div class="card-footer" v-if="order.orderStatus === 10">
+                                        <el-button type="success" @click="handleAcceptOrder(order.id)">✅
+                                            接受指定</el-button>
+                                        <el-popconfirm title="确定要拒绝这位客户的指定吗？" @confirm="handleRejectOrder(order.id)">
+                                            <template #reference>
+                                                <el-button type="danger" plain>❌ 残忍拒绝</el-button>
+                                            </template>
+                                        </el-popconfirm>
+                                    </div>
+                                    <div class="card-footer" v-else-if="order.orderStatus === 20">
+                                        <span style="color: #909399; font-size: 14px;">请上门完成服务，等待客户验收完毕</span>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                        <el-empty v-if="myOrders.length === 0 && !loadingMy" description="您目前没有任务，快去大厅抢一单吧！" />
+                    </div>
+                </el-tab-pane>
 
+            </el-tabs>
+        </el-card>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '../utils/request'
-import { getAvailableOrdersAPI, getProOrdersAPI, takeOrderAPI } from '../api/order'
-import {useUserStore} from '../store/user';
+import { ElMessage } from 'element-plus'
+import { getAvailableOrdersAPI, getMyOrdersAPI, acceptOrderAPI, rejectOrderAPI } from '../api/order'
 
-const userStore = useUserStore()
-
-const activeTab = ref('hall') // 默认停留在抢单大厅
-const availableOrders = ref([])
+const activeTab = ref('hall')
+const hallOrders = ref([])
 const myOrders = ref([])
-const proId =  userStore.userId// 获取当前师傅的 ID
+const loadingHall = ref(false)
+const loadingMy = ref(false)
 
+// 页面加载默认获取大厅数据
 onMounted(() => {
-    fetchAvailableOrders()
+    fetchHallOrders()
 })
 
-// Tab 切换时触发不同接口
-const handleTabChange = (tab) => {
-    if (tab.paneName === 'hall') fetchAvailableOrders()
-    if (tab.paneName === 'my') fetchMyOrders()
+// 切换 Tab 时加载对应数据
+const handleTabChange = (tabName) => {
+    if (tabName === 'hall') fetchHallOrders()
+    if (tabName === 'my') fetchMyOrders()
 }
 
-// 1. 获取大厅订单
-const fetchAvailableOrders = async () => {
+// 获取抢单大厅订单 (无主单)
+const fetchHallOrders = async () => {
+    loadingHall.value = true
     try {
         const res = await getAvailableOrdersAPI()
-        if (res.code === 200) availableOrders.value = res.data
-    } catch (error) {
-        ElMessage.error('刷新大厅失败')
+        if (res.code === 200) hallOrders.value = res.data
+    } finally {
+        loadingHall.value = false
     }
 }
 
-// 2. 获取我的接单
+// 获取我的任务 (包含客户指定给我的、我已接的、已完成的)
 const fetchMyOrders = async () => {
+    loadingMy.value = true
     try {
-        const res = await request.get(`/orders/pro/${proId}`)
+        const res = await getMyOrdersAPI()
         if (res.code === 200) myOrders.value = res.data
-    } catch (error) {
-        ElMessage.error('获取我的任务失败')
+    } finally {
+        loadingMy.value = false
     }
 }
 
-// 3. 核心功能：抢单
-const handleTakeOrder = (orderId) => {
-    ElMessageBox.confirm('抢单后请务必准时为客户提供服务，确定接单吗？', '抢单确认', {
-        confirmButtonText: '确定接下',
-        cancelButtonText: '再想想',
-        type: 'warning'
-    }).then(async () => {
-        try {
-            // 传递 proId 给后端绑定
-            const res = await takeOrderAPI(orderId, proId)
-            if (res.code === 200) {
-                ElMessage.success('抢单成功！')
-                // 抢单成功后，自动切换到“我的任务”标签页
-                activeTab.value = 'my'
-                fetchMyOrders()
-            } else {
-                ElMessage.error(res.message)
-                fetchAvailableOrders() // 如果被抢了，刷新列表
-            }
-        } catch (error) {
-            console.error(error)
+// 抢单 / 接单
+const handleAcceptOrder = async (orderId) => {
+    try {
+        const res = await acceptOrderAPI(orderId)
+        if (res.code === 200) {
+            ElMessage.success('🎉 接单成功！请尽快联系客户。')
+            if (activeTab.value === 'hall') fetchHallOrders()
+            if (activeTab.value === 'my') fetchMyOrders()
+        } else {
+            ElMessage.error(res.message)
         }
-    }).catch(() => { })
+    } catch (error) {
+        console.error('接单异常', error)
+    }
 }
 
-// 工具函数：格式化时间
+// 拒单 (针对客户指定的订单)
+const handleRejectOrder = async (orderId) => {
+    try {
+        const res = await rejectOrderAPI(orderId)
+        if (res.code === 200) {
+            ElMessage.success('已拒绝该订单')
+            fetchMyOrders()
+        }
+    } catch (error) {
+        console.error('拒单异常', error)
+    }
+}
+
+// 时间格式化工具
 const formatTime = (timeStr) => {
     if (!timeStr) return '-'
-    return timeStr.replace('T', ' ').substring(0, 19)
+    return timeStr.replace('T', ' ').substring(0, 16)
 }
 </script>
 
 <style scoped>
-.pro-workspace {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-    min-height: 500px;
+.pro-orders-container {
+    padding: 10px;
 }
 
-.empty-tips {
-    text-align: center;
-    padding: 60px 0;
-    color: #909399;
-    font-size: 16px;
-    background-color: #f8f9fa;
+.order-card {
     border-radius: 8px;
+    position: relative;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ebeef5;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.order-no {
+    font-size: 14px;
+    color: #909399;
+    font-family: monospace;
+}
+
+.card-body p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #303133;
+}
+
+.card-body .price {
+    font-size: 16px;
+    font-weight: bold;
+    color: #606266;
+}
+
+.card-body .price span {
+    color: #F56C6C;
+    font-size: 20px;
+}
+
+.card-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ebeef5;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.rating-box {
     margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #67c23a;
 }
 </style>
