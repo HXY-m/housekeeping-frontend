@@ -10,6 +10,7 @@ import UserManage from '@/views/UserManage.vue';
 import Profile from '@/views/Profile.vue';
 import OrderManage from '@/views/OrderManage.vue';
 import AddressManage from '@/views/AddressManage.vue';
+import AuditManage from '@/views/AuditManage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -75,6 +76,11 @@ const router = createRouter({
           path: 'address',
           name: 'AddressManage',
           component: AddressManage
+        },
+        {
+          path: 'audit-manage',
+          name: 'AuditManage',
+          component: AuditManage
         }
       ]
     }

@@ -59,6 +59,12 @@
                             <List />
                         </el-icon> 订单管理
                     </li>
+                    <li @click="router.push('/home/audit-manage')"
+                        :class="{ active: currentPath === '/home/audit-manage' }">
+                        <el-icon>
+                            <Stamp />
+                        </el-icon> 资质审核
+                    </li>
                 </template>
             </ul>
         </aside>

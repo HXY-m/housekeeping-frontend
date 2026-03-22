@@ -30,3 +30,7 @@ export const getProfessionalsByServiceAPI = (serviceId) => request.get(`/profess
 export const updatePasswordAPI = (userId, oldPassword, newPassword) => {
     return request.put(`/users/${userId}/password?oldPassword=${oldPassword}&newPassword=${newPassword}`)
 }
+
+// ================= 管理员专属 (资质审批) =================
+export const getProfessionalsAdminAPI = () => request.get('/professional/admin/list')
+export const auditProfessionalAPI = (id, status) => request.patch(`/professional/admin/audit/${id}?status=${status}`)
