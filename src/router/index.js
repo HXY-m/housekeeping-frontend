@@ -12,14 +12,15 @@ import OrderManage from '@/views/OrderManage.vue';
 import AddressManage from '@/views/AddressManage.vue';
 import AuditManage from '@/views/AuditManage.vue'
 import Welcome from '@/views/Welcome.vue';
+import Landing from '@/views/Landing.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 默认访问根目录时，重定向到登录页
     {
       path: '/',
-      redirect: '/login'
+      name: 'Landing',
+      component: Landing // 【修改】：让根路径直接展示官网首页
     },
     // 配置登录页路由
     {
