@@ -48,7 +48,7 @@
                                     <el-tag v-else type="warning">待平台审核</el-tag>
                                 </el-form-item>
                                 <el-form-item label="综合评分">
-                                    <el-rate v-model="profileRating" disabled show-score text-color="#ff9900"
+                                    <el-rate :model-value="profileRating" disabled show-score text-color="#ff9900"
                                         score-template="{value} 分" />
                                 </el-form-item>
 
@@ -64,6 +64,19 @@
                                 <el-form-item label="从业经验(年)">
                                     <el-input-number v-model="profileForm.experienceYears" :min="0" :max="50"
                                         style="width: 100%;" />
+                                </el-form-item>
+                                <el-form-item label="资质证明">
+                                    <el-upload class="avatar-uploader" action="#" :show-file-list="false"
+                                        :http-request="customUpload" :before-upload="beforeUpload">
+                                        <img v-if="profileForm.certFileUrl" :src="profileForm.certFileUrl"
+                                            class="cert-image" />
+                                        <el-icon v-else class="avatar-uploader-icon">
+                                            <Plus />
+                                        </el-icon>
+                                    </el-upload>
+                                    <div style="font-size: 12px; color: #909399; margin-top: 5px; line-height: 1.2;">
+                                        请上传您的身份证正面或职业技能证书，清晰的照片有助于提高审核通过率。(限 JPG/PNG，小于 2MB)
+                                    </div>
                                 </el-form-item>
                                 <el-form-item label="常驻地址">
                                     <el-input v-model="profileForm.address" placeholder="如：北京市朝阳区xx街道" />
@@ -114,13 +127,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../store/user'
+import { Plus } from '@element-plus/icons-vue'
 // 【改动点 1】：引入刚刚封装好的 API 接口
 import {
     getCustomerProfileAPI,
     saveCustomerProfileAPI,
     getProfessionalProfileAPI,
     saveProfessionalProfileAPI,
-    updatePasswordAPI
+    updatePasswordAPI,
+    uploadFileAPI
 } from '../api/profile'
 
 const router = useRouter()
@@ -196,6 +211,43 @@ const saveProfileInfo = async () => {
         console.error('保存资料异常', error)
     }
 }
+// 【改动点 2】：自定义上传行为，全面接管 el-upload
+const customUpload = async (options) => {
+    // 构建 FormData 数据格式
+    const formData = new FormData()
+    formData.append('file', options.file)
+
+    try {
+        // 调用我们自己封装的 Axios API，自动携带 /api 前缀和 JWT Token
+        const res = await uploadFileAPI(formData)
+
+        if (res.code === 200) {
+            profileForm.value.certFileUrl = res.data // 拿到后端的 URL 回显图片
+            ElMessage.success('🎉 资质图片上传成功！')
+            options.onSuccess(res, options.file) // 通知组件上传成功，消除 loading 状态
+        } else {
+            ElMessage.error(res.message || '上传失败')
+            options.onError(new Error(res.message))
+        }
+    } catch (error) {
+        console.error('文件上传异常', error)
+        options.onError(error)
+    }
+}
+
+// 【新增】：上传前的校验 (限制格式和大小)
+const beforeUpload = (file) => {
+    const isImage = file.type === 'image/jpeg' || file.type === 'image/png'
+    const isLt2M = file.size / 1024 / 1024 < 2
+
+    if (!isImage) {
+        ElMessage.error('上传图片只能是 JPG/PNG 格式!')
+    }
+    if (!isLt2M) {
+        ElMessage.error('上传图片大小不能超过 2MB!')
+    }
+    return isImage && isLt2M
+}
 
 // ===================== 密码修改业务逻辑 =====================
 const pwdFormRef = ref(null)
@@ -251,6 +303,35 @@ const submitPasswordChange = () => {
 const resetForm = () => pwdFormRef.value.resetFields()
 </script>
 <style scoped>
+.avatar-uploader .el-upload {
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--el-transition-duration-fast);
+}
+
+.avatar-uploader .el-upload:hover {
+    border-color: #409EFF;
+}
+
+.avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    line-height: 150px;
+}
+
+.cert-image {
+    width: 150px;
+    height: 150px;
+    display: block;
+    object-fit: cover;
+}
+
 .profile-container {
     padding: 10px;
 }

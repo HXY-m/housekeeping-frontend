@@ -1,5 +1,13 @@
 import request from '../utils/request'
 
+// ================= 通用文件上传 =================
+// 提交文件时必须使用 FormData 对象
+export const uploadFileAPI = (formData) => request.post('/common/upload', formData, {
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    }
+})
+
 // ================= 客户 (Customer) 相关 =================
 // 获取客户个人资料
 export const getCustomerProfileAPI = (userId) => request.get(`/customer?userId=${userId}`)
