@@ -7,6 +7,11 @@
             </div>
 
             <ul class="menu">
+                <li @click="router.push('/home/welcome')" :class="{ active: currentPath === '/home/welcome' }">
+                    <el-icon>
+                        <Monitor />
+                    </el-icon> 欢迎页
+                </li>
                 <template v-if="role === '2'">
                     <li @click="router.push('/home/services')" :class="{ active: currentPath === '/home/services' }">
                         <el-icon>
@@ -121,7 +126,7 @@ import { useRouter, useRoute } from 'vue-router'
 // 引入 Element Plus 的图标 (加入了下拉箭头、退出开关等图标)
 import {
     ShoppingTrolley, Tickets, Briefcase, DataLine,
-    SetUp, User, CaretBottom, SwitchButton
+    SetUp, User, CaretBottom, SwitchButton, Monitor
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../store/user'
 const userStore = useUserStore()

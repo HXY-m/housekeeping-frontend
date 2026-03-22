@@ -86,9 +86,11 @@ const handleSubmit = async () => {
                 const userRole = Number(userStore.userRole)
 
                 // 根据不同角色跳转到专属的首页
-                if (userRole === 1) router.push('/home/dashboard')
-                else if (userRole === 2) router.push('/home/services')
-                else if (userRole === 3) router.push('/home/professional-orders')
+                // 登录成功后，无论是什么角色，统一跳到基座路由
+                router.push('/home')
+                // if (userRole === 1) router.push('/home/dashboard')
+                // else if (userRole === 2) router.push('/home/services')
+                // else if (userRole === 3) router.push('/home/professional-orders')
 
             } else {
                 ElMessage.error(res.message)

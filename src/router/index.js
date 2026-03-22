@@ -11,6 +11,7 @@ import Profile from '@/views/Profile.vue';
 import OrderManage from '@/views/OrderManage.vue';
 import AddressManage from '@/views/AddressManage.vue';
 import AuditManage from '@/views/AuditManage.vue'
+import Welcome from '@/views/Welcome.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,8 +31,13 @@ const router = createRouter({
       path: '/home',
       name: 'Home',
       component: Home,
-      // redirect: '/home',
+      redirect: '/home/welcome',
       children: [
+        {
+          path: 'welcome', // 3. 【核心新增】：配置欢迎页的子路由
+          name: 'Welcome',
+          component: Welcome
+        },
         {
           path: 'services',
           name: 'ServiceList',
