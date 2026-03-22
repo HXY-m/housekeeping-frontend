@@ -64,11 +64,14 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
 import { getAvailableOrdersAPI, getProOrdersAPI, takeOrderAPI } from '../api/order'
+import {useUserStore} from '../store/user';
+
+const userStore = useUserStore()
 
 const activeTab = ref('hall') // 默认停留在抢单大厅
 const availableOrders = ref([])
 const myOrders = ref([])
-const proId = localStorage.getItem('userId') // 获取当前师傅的 ID
+const proId =  userStore.userId// 获取当前师傅的 ID
 
 onMounted(() => {
     fetchAvailableOrders()

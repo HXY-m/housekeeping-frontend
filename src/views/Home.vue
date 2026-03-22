@@ -19,6 +19,11 @@
                             <Tickets />
                         </el-icon> 我的订单
                     </li>
+                    <li @click="router.push('/home/address')" :class="{ active: currentPath === '/home/address' }">
+                        <el-icon>
+                            <Location />
+                        </el-icon> 我的地址
+                    </li>
                 </template>
 
                 <template v-if="role === '3'">
@@ -47,6 +52,12 @@
                         <el-icon>
                             <User />
                         </el-icon> 用户管理
+                    </li>
+                    <li @click="router.push('/home/orders-manage')"
+                        :class="{ active: currentPath === '/home/orders-manage' }">
+                        <el-icon>
+                            <List />
+                        </el-icon> 订单管理
                     </li>
                 </template>
             </ul>
@@ -151,14 +162,11 @@ const roleTagType = computed(() => {
 
 // 初始化：从缓存读取凭证，防丢失
 onMounted(() => {
-    const storedName = localStorage.getItem('username')
-    // 注意：这里一定要用 userRole，防止被踢回登录页！
-    const storedRole = localStorage.getItem('role')
-
-    if (storedName && storedRole) {
-        username.value = storedName
-        role.value = storedRole
+    // ✅ 直接找 Pinia 仓库要数据
+    if (userStore.username && userStore.userRole) {
+        // 凭证都在，完美放行！（不需要再手动赋值了，因为上面用了 computed）
     } else {
+        // 仓库是空的，说明没登录，无情踢回登录页
         router.push('/login')
     }
 })

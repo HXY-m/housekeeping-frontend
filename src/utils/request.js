@@ -9,17 +9,14 @@ const request = axios.create({
 // 2. 请求拦截器 (发请求前执行)
 request.interceptors.request.use(
     config => {
-        // 每次发请求前，去浏览器的本地存储里找找有没有 token
+        // ✅ 核心修复：在这里面调用，保证此时 Pinia 已经激活
         const userStore = useUserStore()
         if (userStore.token) {
-            // 如果有，就塞进请求头里 (严格按照后端的 Bearer 规范)
-            config.headers['Authorization'] = `Bearer ${token}`
+            config.headers['Authorization'] = `Bearer ${userStore.token}`
         }
         return config
     },
-    error => {
-        return Promise.reject(error)
-    }
+    error => Promise.reject(error)
 )
 
 // 3. 响应拦截器 (后端返回数据后执行)

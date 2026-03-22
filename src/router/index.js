@@ -8,6 +8,8 @@ import AdminDashboard from '@/views/AdminDashboard.vue';
 import ServiceManage from '@/views/ServiceManage.vue';
 import UserManage from '@/views/UserManage.vue';
 import Profile from '@/views/Profile.vue';
+import OrderManage from '@/views/OrderManage.vue';
+import AddressManage from '@/views/AddressManage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,6 +65,16 @@ const router = createRouter({
           path: 'profile',
           name: 'Profile',
           component: Profile
+        },
+        {
+          path: 'orders-manage',
+          name: 'OrderManage',
+          component: OrderManage
+        },
+        {
+          path: 'address',
+          name: 'AddressManage',
+          component: AddressManage
         }
       ]
     }

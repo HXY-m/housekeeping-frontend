@@ -68,13 +68,15 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
+import {useUserStore} from '../store/user';
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 从本地存储拿取用户信息
-const username = ref(localStorage.getItem('username') || '未知用户')
-const role = ref(localStorage.getItem('role'))
-const userId = ref(localStorage.getItem('userId'))
+const username = ref(userStore.username || '未知用户')
+const role = ref(userStore.userRole)
+const userId = ref(userStore.userId)
 
 const activeTab = ref('security')
 const pwdFormRef = ref(null)
@@ -132,7 +134,7 @@ const submitPasswordChange = () => {
                         confirmButtonText: '去登录',
                         type: 'success',
                         callback: () => {
-                            localStorage.clear() // 清空失效的 token
+                            userStore.clearUserInfo() // 清空失效的 token
                             router.push('/login') // 强制踢回登录页
                         }
                     })
