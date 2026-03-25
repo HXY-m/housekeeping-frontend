@@ -1,159 +1,183 @@
 <template>
-    <div class="login-container">
-        <el-card class="login-card" shadow="always">
-            <h2 class="title">{{ isLogin ? '家政服务平台登录' : '注册新账号' }}</h2>
-
-            <el-form :model="formData" label-position="top">
-                <el-form-item label="账号">
-                    <el-input v-model="formData.username" placeholder="请输入用户名" clearable />
-                </el-form-item>
-
-                <el-form-item label="密码">
-                    <el-input v-model="formData.password" type="password" placeholder="请输入密码" show-password />
-                </el-form-item>
-
-                <el-form-item label="您的身份" v-if="!isLogin">
-                    <el-radio-group v-model="formData.role">
-                        <el-radio :label="2">我要找服务 (客户)</el-radio>
-                        <el-radio :label="3">我要接单赚收益 (师傅)</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-
-                <el-button type="primary" class="submit-btn" @click="handleSubmit">
-                    {{ isLogin ? '立 即 登 录' : '立 即 注 册' }}
-                </el-button>
-
-                <div class="toggle-text">
-                    <span v-if="isLogin">还没有账号？ <a href="#" @click.prevent="toggleMode">去注册</a></span>
-                    <span v-else>已有账号？ <a href="#" @click.prevent="toggleMode">返回登录</a></span>
-                </div>
-            </el-form>
-        </el-card>
+  <section class="login-page">
+    <div class="promo-panel">
+      <p class="eyebrow">HomeService</p>
+      <h1>把家政预约、支付、履约、售后和运营分析串成一套完整系统。</h1>
+      <ul>
+        <li>客户端支持预约、模拟支付、进度追踪与售后反馈。</li>
+        <li>服务人员端支持接单、沟通留言、服务进度上报。</li>
+        <li>管理端支持数据分析、导出报表与操作日志审计。</li>
+      </ul>
     </div>
+
+    <el-card class="form-panel" shadow="never">
+      <div class="form-head">
+        <p>{{ isLogin ? 'Welcome back' : 'Create account' }}</p>
+        <h2>{{ isLogin ? '登录平台' : '注册账号' }}</h2>
+      </div>
+
+      <el-form :model="formData" label-position="top">
+        <el-form-item label="用户名">
+          <el-input v-model="formData.username" placeholder="请输入用户名" clearable />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="formData.password" type="password" placeholder="请输入密码" show-password />
+        </el-form-item>
+        <el-form-item v-if="!isLogin" label="注册角色">
+          <el-radio-group v-model="formData.role">
+            <el-radio :label="2">客户</el-radio>
+            <el-radio :label="3">服务人员</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-button class="submit-btn" type="primary" @click="handleSubmit">
+          {{ isLogin ? '登录并进入工作台' : '完成注册' }}
+        </el-button>
+        <el-button text class="switch-btn" @click="toggleMode">
+          {{ isLogin ? '没有账号，去注册' : '已有账号，返回登录' }}
+        </el-button>
+      </el-form>
+    </el-card>
+  </section>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import request from '../utils/request'
-import { loginAPI, registerAPI } from '../api/auth'
-// 【新增】：引入刚才建好的 Store
-import { useUserStore } from '../store/user'
-const userStore = useUserStore()
+import { loginAPI, registerAPI } from '@/api/auth'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
-const isLogin = ref(true) // 控制当前是登录表单还是注册表单
+const route = useRoute()
+const userStore = useUserStore()
 
-// 表单数据绑定
+const isLogin = ref(true)
 const formData = ref({
-    username: '',
-    password: '',
-    role: 2 // 默认选中客户角色
+  username: '',
+  password: '',
+  role: 2
 })
 
-// 切换登录/注册模式
 const toggleMode = () => {
-    isLogin.value = !isLogin.value
-    formData.value = { username: '', password: '', role: 2 } // 切换时清空表单
+  isLogin.value = !isLogin.value
+  formData.value = { username: '', password: '', role: 2 }
 }
 
-// 统一的提交处理逻辑
 const handleSubmit = async () => {
-    // 1. 前端基础非空校验
-    if (!formData.value.username || !formData.value.password) {
-        ElMessage.warning('请填写完整的账号和密码')
-        return
+  if (!formData.value.username || !formData.value.password) {
+    ElMessage.warning('请填写完整账号和密码')
+    return
+  }
+
+  if (isLogin.value) {
+    const res = await loginAPI({
+      username: formData.value.username,
+      password: formData.value.password
+    })
+    if (res.code === 200) {
+      userStore.setUserInfo(res.data)
+      ElMessage.success('登录成功')
+      router.push(route.query.redirect || '/home')
+    } else {
+      ElMessage.error(res.message)
     }
+    return
+  }
 
-    try {
-        if (isLogin.value) {
-            // ==========================================
-            // 【登录分支】
-            // ==========================================
-            const res = await loginAPI({
-                username: formData.value.username,
-                password: formData.value.password
-            })
-
-            if (res.code === 200) {
-                ElMessage.success('登录成功')
-
-                // 保存 Token 和用户信息到本地缓存
-                userStore.setUserInfo(res.data)
-
-                // 【防坑核心】：强制转换为数字，防止后端传来的字符串 "1" 导致 === 匹配失败！
-                const userRole = Number(userStore.userRole)
-
-                // 根据不同角色跳转到专属的首页
-                // 登录成功后，无论是什么角色，统一跳到基座路由
-                router.push('/home')
-
-            } else {
-                ElMessage.error(res.message)
-            }
-
-        } else {
-            // ==========================================
-            // 【注册分支】
-            // ==========================================
-            const res = await registerAPI(formData.value)
-
-            if (res.code === 200) {
-                ElMessage.success('注册成功，请使用新账号登录！')
-                isLogin.value = true // 注册成功后，自动丝滑切回登录界面
-            } else {
-                ElMessage.error(res.message) // 显示用户名重复等报错信息
-            }
-        }
-    } catch (error) {
-        console.error('网络或服务器异常', error)
-    }
+  const res = await registerAPI(formData.value)
+  if (res.code === 200) {
+    ElMessage.success('注册成功，请登录')
+    isLogin.value = true
+  } else {
+    ElMessage.error(res.message)
+  }
 }
 </script>
 
 <style scoped>
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    /* 科技感渐变背景 */
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.2fr 0.88fr;
+  background:
+    radial-gradient(circle at top right, rgba(251, 191, 36, 0.22), transparent 28%),
+    linear-gradient(135deg, #09203f 0%, #537895 100%);
 }
 
-.login-card {
-    width: 400px;
-    padding: 20px;
-    border-radius: 12px;
+.promo-panel,
+.form-panel {
+  padding: 48px;
 }
 
-.title {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #303133;
+.promo-panel {
+  color: #fff;
+  display: grid;
+  align-content: center;
+  gap: 20px;
+}
+
+.promo-panel h1 {
+  margin: 0;
+  font-size: clamp(38px, 6vw, 62px);
+  line-height: 1.08;
+  max-width: 760px;
+}
+
+.promo-panel ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.9;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #fcd34d;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.form-panel {
+  margin: auto 32px auto 0;
+  border-radius: 32px;
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+}
+
+.form-head p {
+  margin: 0 0 6px;
+  color: #0f766e;
+}
+
+.form-head h2 {
+  margin: 0 0 24px;
+  font-size: 32px;
+}
+
+.submit-btn,
+.switch-btn {
+  width: 100%;
 }
 
 .submit-btn {
-    width: 100%;
-    margin-top: 10px;
-    font-size: 16px;
-    height: 40px;
+  margin-top: 12px;
+  height: 46px;
 }
 
-.toggle-text {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 14px;
-    color: #606266;
+.switch-btn {
+  margin-top: 10px;
 }
 
-.toggle-text a {
-    color: #409EFF;
-    text-decoration: none;
-}
+@media (max-width: 960px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
 
-.toggle-text a:hover {
-    text-decoration: underline;
+  .form-panel {
+    margin: 0 20px 20px;
+    max-width: none;
+  }
 }
 </style>

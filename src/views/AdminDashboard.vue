@@ -1,208 +1,194 @@
 <template>
-    <div class="dashboard-container">
-        <h2 style="margin-bottom: 20px; color: #303133;">平台数据运营中心</h2>
-
-        <el-row :gutter="20" class="data-cards">
-            <el-col :span="6">
-                <el-card shadow="hover" class="data-card bg-blue">
-                    <div class="title">总订单量</div>
-                    <div class="number">{{ dashboardData.totalOrders }}</div>
-                </el-card>
-            </el-col>
-            <el-col :span="6">
-                <el-card shadow="hover" class="data-card bg-green">
-                    <div class="title">平台注册客户</div>
-                    <div class="number">{{ dashboardData.customerCount }}</div>
-                </el-card>
-            </el-col>
-            <el-col :span="6">
-                <el-card shadow="hover" class="data-card bg-orange">
-                    <div class="title">入驻服务师傅</div>
-                    <div class="number">{{ dashboardData.proCount }}</div>
-                </el-card>
-            </el-col>
-            <el-col :span="6">
-                <el-card shadow="hover" class="data-card bg-purple">
-                    <div class="title">累计流水 (元)</div>
-                    <div class="number">¥ {{ dashboardData.totalRevenue }}</div>
-                </el-card>
-            </el-col>
-        </el-row>
-
-        <el-row :gutter="20" style="margin-top: 20px;">
-            <el-col :span="12">
-                <el-card shadow="hover">
-                    <template #header>
-                        <div class="card-header">近七日订单趋势</div>
-                    </template>
-                    <div ref="lineChartRef" style="height: 300px; width: 100%;"></div>
-                </el-card>
-            </el-col>
-            <el-col :span="12">
-                <el-card shadow="hover">
-                    <template #header>
-                        <div class="card-header">服务类目预约占比</div>
-                    </template>
-                    <div ref="pieChartRef" style="height: 300px; width: 100%;"></div>
-                </el-card>
-            </el-col>
-        </el-row>
+  <section class="dashboard-page">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Analytics</p>
+        <h2>运营数据总览</h2>
+        <p>这里聚合订单、支付、满意度、售后与服务占比，是论文展示“数据分析模块”的主页面。</p>
+      </div>
+      <div class="hero-actions">
+        <el-button type="primary" @click="fetchDashboardData">刷新数据</el-button>
+        <el-button plain @click="exportOrdersReportAPI">导出订单报表</el-button>
+        <el-button plain @click="exportAfterSaleReportAPI">导出售后报表</el-button>
+      </div>
     </div>
+
+    <div class="stats-grid">
+      <el-card v-for="card in cards" :key="card.title" shadow="hover" class="stat-card">
+        <p>{{ card.title }}</p>
+        <strong>{{ card.value }}</strong>
+        <span>{{ card.desc }}</span>
+      </el-card>
+    </div>
+
+    <div class="chart-grid">
+      <el-card shadow="never" class="panel-card">
+        <template #header>订单阶段分布</template>
+        <div ref="lineChartRef" class="chart-box" />
+      </el-card>
+      <el-card shadow="never" class="panel-card">
+        <template #header>服务项目占比</template>
+        <div ref="pieChartRef" class="chart-box" />
+      </el-card>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
-import request from '../utils/request'
+import request from '@/utils/request'
+import { exportAfterSaleReportAPI, exportOrdersReportAPI } from '@/api/report'
 
-// 图表 DOM 引用
 const lineChartRef = ref(null)
 const pieChartRef = ref(null)
-
-// 大盘响应式数据，初始值为 0
 const dashboardData = ref({
-    totalOrders: 0,
-    customerCount: 0,
-    proCount: 0,
-    totalRevenue: 0
+  totalOrders: 0,
+  customerCount: 0,
+  proCount: 0,
+  totalRevenue: 0,
+  completedOrders: 0,
+  paidOrders: 0,
+  afterSaleCount: 0,
+  afterSalePending: 0,
+  satisfaction: 0,
+  paymentConversion: 0,
+  trendDates: [],
+  trendData: [],
+  pieData: []
 })
 
-onMounted(() => {
-    fetchDashboardData()
-})
+const cards = computed(() => ([
+  { title: '总订单量', value: dashboardData.value.totalOrders, desc: '累计下单记录' },
+  { title: '已支付订单', value: dashboardData.value.paidOrders, desc: `转化率 ${dashboardData.value.paymentConversion}%` },
+  { title: '累计收入', value: `¥ ${dashboardData.value.totalRevenue}`, desc: '已完成订单统计' },
+  { title: '待处理售后', value: dashboardData.value.afterSalePending, desc: `累计售后 ${dashboardData.value.afterSaleCount}` },
+  { title: '客户数', value: dashboardData.value.customerCount, desc: '平台注册客户' },
+  { title: '服务人员', value: dashboardData.value.proCount, desc: '已入驻服务人员' },
+  { title: '已完成订单', value: dashboardData.value.completedOrders, desc: '进入验收闭环的订单' },
+  { title: '平均满意度', value: dashboardData.value.satisfaction, desc: '订单评分均值' }
+]))
 
-// 核心：获取数据并安全渲染
 const fetchDashboardData = async () => {
-    try {
-        const res = await request.get('/statistics/dashboard')
-        if (res.code === 200) {
-            // 1. 赋值数据渲染上方卡片
-            dashboardData.value = res.data
-
-            // 2. 极其关键：等待 Vue 将新数据完全更新到真实的 DOM 上
-            await nextTick()
-
-            // 3. 安全初始化图表
-            if (lineChartRef.value && pieChartRef.value) {
-                initLineChart(res.data.trendDates, res.data.trendData)
-                initPieChart(res.data.pieData)
-            } else {
-                console.warn('ECharts DOM 尚未就绪，跳过渲染')
-            }
-        }
-    } catch (error) {
-        console.error('获取大盘数据失败', error)
-    }
+  const res = await request.get('/statistics/dashboard')
+  if (res.code === 200) {
+    dashboardData.value = res.data
+    await nextTick()
+    initLineChart()
+    initPieChart()
+  }
 }
 
-// 初始化折线图
-const initLineChart = (dates, data) => {
-    const dom = lineChartRef.value
-    // 防弹衣 1：确保 DOM 存在，且必须是纯正的 HTML 元素 (nodeType === 1)
-    if (!dom || dom.nodeType !== 1) return
-
-    // 防弹衣 2：如果图表已经存在，先销毁它，防止重复渲染报错
-    let chart = echarts.getInstanceByDom(dom)
-    if (chart) {
-        chart.dispose()
-    }
-
-    // 正式渲染
-    chart = echarts.init(dom)
-    chart.setOption({
-        tooltip: { trigger: 'axis' },
-        xAxis: { type: 'category', data: dates || [] },
-        yAxis: { type: 'value' },
-        series: [{
-            data: data || [],
-            type: 'line',
-            smooth: true,
-            itemStyle: { color: '#409EFF' },
-            areaStyle: { color: 'rgba(64,158,255,0.2)' }
-        }]
-    })
+const initLineChart = () => {
+  if (!lineChartRef.value) return
+  echarts.getInstanceByDom(lineChartRef.value)?.dispose()
+  const chart = echarts.init(lineChartRef.value)
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: dashboardData.value.trendDates },
+    yAxis: { type: 'value' },
+    series: [{
+      type: 'line',
+      smooth: true,
+      areaStyle: { color: 'rgba(15,118,110,0.16)' },
+      itemStyle: { color: '#0f766e' },
+      data: dashboardData.value.trendData
+    }]
+  })
 }
 
-// 初始化饼图
-const initPieChart = (pieData) => {
-    const dom = pieChartRef.value
-    // 防弹衣 1
-    if (!dom || dom.nodeType !== 1) return
-
-    // 防弹衣 2
-    let chart = echarts.getInstanceByDom(dom)
-    if (chart) {
-        chart.dispose()
-    }
-
-    // 正式渲染
-    chart = echarts.init(dom)
-    chart.setOption({
-        tooltip: { trigger: 'item' },
-        legend: { bottom: '0%', left: 'center' },
-        series: [{
-            name: '订单量',
-            type: 'pie',
-            radius: ['40%', '70%'],
-            itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-            data: pieData || []
-        }]
-    })
+const initPieChart = () => {
+  if (!pieChartRef.value) return
+  echarts.getInstanceByDom(pieChartRef.value)?.dispose()
+  const chart = echarts.init(pieChartRef.value)
+  chart.setOption({
+    tooltip: { trigger: 'item' },
+    series: [{
+      type: 'pie',
+      radius: ['42%', '72%'],
+      data: dashboardData.value.pieData,
+      itemStyle: { borderRadius: 14, borderColor: '#fff', borderWidth: 4 }
+    }]
+  })
 }
+
+onMounted(fetchDashboardData)
 </script>
 
 <style scoped>
-.dashboard-container {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+.dashboard-page {
+  display: grid;
+  gap: 20px;
 }
 
-.data-cards .el-card {
-    border: none;
-    color: white;
-    border-radius: 8px;
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
 }
 
-.data-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 100px;
-    padding-left: 10px;
+.eyebrow {
+  margin: 0;
+  color: #0f766e;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 12px;
 }
 
-.title {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-bottom: 10px;
+h2 {
+  margin: 8px 0;
+  font-size: 32px;
 }
 
-.number {
-    font-size: 28px;
-    font-weight: bold;
+.hero p:last-child {
+  margin: 0;
+  color: #64748b;
 }
 
-/* 渐变色卡片背景 */
-.bg-blue {
-    background: linear-gradient(135deg, #409EFF, #79bbff);
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.bg-green {
-    background: linear-gradient(135deg, #67C23A, #95d475);
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
 }
 
-.bg-orange {
-    background: linear-gradient(135deg, #E6A23C, #eebe77);
+.stat-card {
+  border-radius: 24px;
 }
 
-.bg-purple {
-    background: linear-gradient(135deg, #9c27b0, #ba68c8);
+.stat-card p {
+  margin: 0 0 10px;
+  color: #64748b;
 }
 
-.card-header {
-    font-weight: bold;
-    color: #303133;
+.stat-card strong {
+  display: block;
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.stat-card span {
+  color: #0f766e;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.panel-card {
+  border-radius: 24px;
+}
+
+.chart-box {
+  height: 320px;
 }
 </style>

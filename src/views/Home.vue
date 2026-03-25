@@ -1,303 +1,247 @@
 <template>
-    <div class="home-container" :class="themeClass">
-        <aside class="sidebar">
-            <div class="logo">
-                <span class="logo-text">{{ platformTitle }}</span>
-            </div>
+  <div class="shell" :data-role="role">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-chip">{{ roleBadge }}</span>
+        <h1>{{ platformTitle }}</h1>
+        <p>家政服务、订单协同、售后闭环与运营分析统一工作台。</p>
+      </div>
 
-            <ul class="menu">
-                <li @click="router.push('/home/welcome')" :class="{ active: currentPath === '/home/welcome' }">
-                    <el-icon><Monitor /></el-icon> 欢迎页
-                </li>
+      <nav class="nav">
+        <button
+          v-for="item in navItems"
+          :key="item.path"
+          class="nav-item"
+          :class="{ active: currentPath === item.path }"
+          @click="router.push(item.path)"
+        >
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.label }}</span>
+        </button>
+      </nav>
+    </aside>
 
-                <template v-if="role === '2'">
-                    <li @click="router.push('/home/services')" :class="{ active: currentPath === '/home/services' }">
-                        <el-icon><ShoppingTrolley /></el-icon> 预约服务
-                    </li>
-                    <li @click="router.push('/home/customer-orders')" :class="{ active: currentPath === '/home/customer-orders' }">
-                        <el-icon><Tickets /></el-icon> 我的订单
-                    </li>
-                    <li @click="router.push('/home/after-sale')" :class="{ active: currentPath === '/home/after-sale' }">
-                        <el-icon><List /></el-icon> 售后反馈
-                    </li>
-                    <li @click="router.push('/home/address')" :class="{ active: currentPath === '/home/address' }">
-                        <el-icon><Location /></el-icon> 我的地址
-                    </li>
-                </template>
-
-                <template v-if="role === '3'">
-                    <li @click="router.push('/home/professional-orders')" :class="{ active: currentPath === '/home/professional-orders' }">
-                        <el-icon><Briefcase /></el-icon> 师傅工作台
-                    </li>
-                </template>
-
-                <template v-if="role === '1'">
-                    <li @click="router.push('/home/dashboard')" :class="{ active: currentPath === '/home/dashboard' }">
-                        <el-icon><DataLine /></el-icon> 数据控制台
-                    </li>
-                    <li @click="router.push('/home/services-manage')" :class="{ active: currentPath === '/home/services-manage' }">
-                        <el-icon><SetUp /></el-icon> 服务管理
-                    </li>
-                    <li @click="router.push('/home/users-manage')" :class="{ active: currentPath === '/home/users-manage' }">
-                        <el-icon><User /></el-icon> 用户管理
-                    </li>
-                    <li @click="router.push('/home/orders-manage')" :class="{ active: currentPath === '/home/orders-manage' }">
-                        <el-icon><Tickets /></el-icon> 订单管理
-                    </li>
-                    <li @click="router.push('/home/audit-manage')" :class="{ active: currentPath === '/home/audit-manage' }">
-                        <el-icon><Stamp /></el-icon> 资质审核
-                    </li>
-                    <li @click="router.push('/home/after-sale-manage')" :class="{ active: currentPath === '/home/after-sale-manage' }">
-                        <el-icon><List /></el-icon> 售后处理
-                    </li>
-                </template>
-            </ul>
-        </aside>
-
-        <div class="main-wrapper">
-            <header class="top-header">
-                <div class="header-left"></div>
-                <div class="header-right">
-                    <el-tag :type="roleTagType" effect="dark" round size="small" style="margin-right: 15px;">
-                        {{ roleName }}
-                    </el-tag>
-
-                    <el-dropdown trigger="click">
-                        <span class="user-dropdown-link" style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--header-text-color, #303133);">
-                            <el-avatar :size="32" style="background: #409EFF;">
-                                {{ username ? username.charAt(0).toUpperCase() : 'U' }}
-                            </el-avatar>
-                            {{ username }}
-                            <el-icon><CaretBottom /></el-icon>
-                        </span>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item @click="router.push('/home/profile')">
-                                    <el-icon><User /></el-icon> 个人中心
-                                </el-dropdown-item>
-                                <el-dropdown-item divided style="color: #F56C6C;" @click="handleLogout">
-                                    <el-icon><SwitchButton /></el-icon> 退出系统
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
-                </div>
-            </header>
-
-            <main class="content">
-                <router-view></router-view>
-            </main>
+    <section class="main">
+      <header class="topbar">
+        <div>
+          <p class="topbar-label">Workspace</p>
+          <h2>{{ pageTitle }}</h2>
         </div>
-    </div>
+        <div class="topbar-user">
+          <div class="user-card">
+            <el-avatar :size="36">{{ username?.charAt(0)?.toUpperCase() || 'U' }}</el-avatar>
+            <div>
+              <strong>{{ username }}</strong>
+              <p>{{ roleName }}</p>
+            </div>
+          </div>
+          <el-button text @click="router.push('/home/profile')">个人中心</el-button>
+          <el-button type="danger" plain @click="handleLogout">退出登录</el-button>
+        </div>
+      </header>
+
+      <main class="content">
+        <router-view />
+      </main>
+    </section>
+  </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-    ShoppingTrolley, Tickets, Briefcase, DataLine,
-    SetUp, User, CaretBottom, SwitchButton, Monitor, List, Location, Stamp
+  Briefcase, DataLine, House, List, Location, Monitor, SetUp, ShoppingTrolley, Stamp, Tickets, User
 } from '@element-plus/icons-vue'
-import { useUserStore } from '../store/user'
+import { useUserStore } from '@/store/user'
 
-const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 const username = computed(() => userStore.username)
 const role = computed(() => userStore.userRole)
 const currentPath = computed(() => route.path)
 
-const themeClass = computed(() => {
-    if (role.value === '1') return 'theme-admin'
-    if (role.value === '2') return 'theme-customer'
-    if (role.value === '3') return 'theme-pro'
-    return ''
-})
+const roleBadge = computed(() => ({
+  '1': 'ADMIN',
+  '2': 'CUSTOMER',
+  '3': 'PRO'
+}[role.value] || 'USER'))
 
-const platformTitle = computed(() => {
-    if (role.value === '1') return '家政运营管理后台'
-    if (role.value === '2') return '家政服务预约平台'
-    if (role.value === '3') return '师傅接单中心'
-    return '家政服务平台'
-})
+const roleName = computed(() => ({
+  '1': '平台管理员',
+  '2': '客户端',
+  '3': '服务人员端'
+}[role.value] || '未知角色'))
 
-const roleName = computed(() => {
-    if (role.value === '1') return '管理员'
-    if (role.value === '2') return '客户'
-    if (role.value === '3') return '服务人员'
-    return '未知角色'
-})
+const platformTitle = computed(() => ({
+  '1': '运营管理后台',
+  '2': '客户服务中心',
+  '3': '服务接单中心'
+}[role.value] || '平台工作台'))
 
-const roleTagType = computed(() => {
-    if (role.value === '1') return 'danger'
-    if (role.value === '2') return 'primary'
-    if (role.value === '3') return 'success'
-    return 'info'
-})
+const navConfig = {
+  '1': [
+    { path: '/home/welcome', label: '概览', icon: Monitor },
+    { path: '/home/dashboard', label: '数据分析', icon: DataLine },
+    { path: '/home/orders-manage', label: '订单管理', icon: Tickets },
+    { path: '/home/services-manage', label: '服务管理', icon: SetUp },
+    { path: '/home/users-manage', label: '用户管理', icon: User },
+    { path: '/home/audit-manage', label: '资质审核', icon: Stamp },
+    { path: '/home/after-sale-manage', label: '售后处理', icon: List },
+    { path: '/home/operation-logs', label: '操作日志', icon: House }
+  ],
+  '2': [
+    { path: '/home/welcome', label: '概览', icon: Monitor },
+    { path: '/home/services', label: '预约服务', icon: ShoppingTrolley },
+    { path: '/home/customer-orders', label: '我的订单', icon: Tickets },
+    { path: '/home/after-sale', label: '售后反馈', icon: List },
+    { path: '/home/address', label: '地址管理', icon: Location }
+  ],
+  '3': [
+    { path: '/home/welcome', label: '概览', icon: Monitor },
+    { path: '/home/professional-orders', label: '订单工作台', icon: Briefcase },
+    { path: '/home/profile', label: '资料档案', icon: User }
+  ]
+}
 
-onMounted(() => {
-    if (!userStore.username || !userStore.userRole) {
-        router.push('/login')
-    }
-})
+const navItems = computed(() => navConfig[role.value] || [])
+const pageTitle = computed(() => navItems.value.find((item) => item.path === route.path)?.label || '工作台')
 
 const handleLogout = () => {
-    userStore.clearUserInfo()
-    router.push('/login')
+  userStore.clearUserInfo()
+  router.push('/login')
 }
 </script>
 
 <style scoped>
-.home-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    background-color: #f0f2f5;
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  background:
+    radial-gradient(circle at top left, rgba(13, 148, 136, 0.14), transparent 28%),
+    linear-gradient(180deg, #f4f8f6 0%, #eff6ff 100%);
 }
 
 .sidebar {
-    width: 220px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.3s ease;
-    z-index: 10;
+  padding: 28px 22px;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.logo {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.brand-chip {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.14);
+  color: #99f6e4;
+  font-size: 12px;
+  letter-spacing: 0.16em;
 }
 
-.menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex: 1;
+.brand h1 {
+  margin: 14px 0 10px;
+  font-size: 30px;
 }
 
-.menu li {
-    padding: 15px 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    transition: all 0.2s;
+.brand p {
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.6;
 }
 
-.main-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+.nav {
+  display: grid;
+  gap: 10px;
 }
 
-.top-header {
-    height: 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-    z-index: 9;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
 }
 
-.header-right {
-    display: flex;
-    align-items: center;
+.nav-item:hover,
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
-.user-dropdown-link:focus-visible {
-    outline: none;
+.main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 32px 18px;
+}
+
+.topbar-label {
+  margin: 0 0 8px;
+  color: #0f766e;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.topbar h2 {
+  margin: 0;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.user-card p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
+  padding: 0 32px 32px;
+  overflow: auto;
 }
 
-.theme-admin .sidebar {
-    background-color: #2b333e;
-    color: #fff;
-}
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
 
-.theme-admin .top-header {
-    background-color: #ffffff;
-    --header-text-color: #303133;
-}
-
-.theme-admin .menu li:hover {
-    background-color: #3a4555;
-}
-
-.theme-admin .menu li.active {
-    background-color: #409EFF;
-    color: #fff;
-}
-
-.theme-customer .sidebar {
-    background-color: #ffffff;
-    color: #303133;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-}
-
-.theme-customer .logo {
-    border-bottom: 1px solid #ebeef5;
-    color: #409EFF;
-}
-
-.theme-customer .top-header {
-    background-color: #409EFF;
-    --header-text-color: #ffffff;
-}
-
-.theme-customer .menu li {
-    color: #606266;
-}
-
-.theme-customer .menu li:hover {
-    background-color: #f0f7ff;
-    color: #409EFF;
-}
-
-.theme-customer .menu li.active {
-    background-color: #ecf5ff;
-    color: #409EFF;
-    border-right: 4px solid #409EFF;
-    font-weight: bold;
-}
-
-.theme-pro .sidebar {
-    background-color: #34495e;
-    color: #ecf0f1;
-}
-
-.theme-pro .top-header {
-    background-color: #ffffff;
-    border-bottom: 2px solid #1abc9c;
-    --header-text-color: #303133;
-}
-
-.theme-pro .logo {
-    background-color: #2c3e50;
-    border-bottom: none;
-}
-
-.theme-pro .menu li:hover {
-    background-color: #2c3e50;
-}
-
-.theme-pro .menu li.active {
-    background-color: #1abc9c;
-    color: #fff;
+  .sidebar {
+    padding-bottom: 12px;
+  }
 }
 </style>

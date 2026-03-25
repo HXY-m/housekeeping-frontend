@@ -1,225 +1,168 @@
 <template>
-    <div class="welcome-container">
-        <el-card shadow="never" class="welcome-banner">
-            <div class="greeting-box">
-                <el-avatar :size="64" class="user-avatar">
-                    {{ username.charAt(0).toUpperCase() }}
-                </el-avatar>
-                <div class="greeting-text">
-                    <h2>{{ timeGreeting }}，{{ username }}！</h2>
-                    <p v-if="role === '1'">欢迎回到系统控制台，今天也是守护平台平稳运行的一天。</p>
-                    <p v-if="role === '2'">为您提供最优质的家政服务，让生活更轻松。</p>
-                    <p v-if="role === '3'">辛苦了！平台因您的专业服务而更加美好。</p>
-                </div>
-            </div>
-        </el-card>
-
-        <div class="quick-workspace" style="margin-top: 20px;">
-
-            <el-row :gutter="20" v-if="role === '1'">
-                <el-col :span="8">
-                    <el-card shadow="hover" class="data-card" @click="$router.push('/home/audit-manage')">
-                        <el-icon class="card-icon" color="#E6A23C">
-                            <Stamp />
-                        </el-icon>
-                        <div class="card-info">
-                            <div class="title">资质审核</div>
-                            <div class="desc">处理师傅入驻申请</div>
-                        </div>
-                    </el-card>
-                </el-col>
-                <el-col :span="8">
-                    <el-card shadow="hover" class="data-card" @click="$router.push('/home/orders-manage')">
-                        <el-icon class="card-icon" color="#409EFF">
-                            <List />
-                        </el-icon>
-                        <div class="card-info">
-                            <div class="title">全局订单</div>
-                            <div class="desc">监控全平台交易流水</div>
-                        </div>
-                    </el-card>
-                </el-col>
-                <el-col :span="8">
-                    <el-card shadow="hover" class="data-card" @click="$router.push('/home/services-manage')">
-                        <el-icon class="card-icon" color="#67C23A">
-                            <Grid />
-                        </el-icon>
-                        <div class="card-info">
-                            <div class="title">服务管理</div>
-                            <div class="desc">上架或调整服务类目</div>
-                        </div>
-                    </el-card>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="20" v-if="role === '2'">
-                <el-col :span="12">
-                    <el-card shadow="hover" class="action-card bg-blue" @click="$router.push('/home/services')">
-                        <h3>⚡ 一键预约服务</h3>
-                        <p>保洁、维修、搬家，随叫随到</p>
-                    </el-card>
-                </el-col>
-                <el-col :span="12">
-                    <el-card shadow="hover" class="action-card bg-green" @click="$router.push('/home/customer-orders')">
-                        <h3>📋 查看我的订单</h3>
-                        <p>追踪服务进度，评价师傅</p>
-                    </el-card>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="20" v-if="role === '3'">
-                <el-col :span="12">
-                    <el-card shadow="hover" class="action-card bg-orange"
-                        @click="$router.push('/home/professional-orders')">
-                        <h3>🔥 前往接单大厅</h3>
-                        <p>海量订单，等您来抢</p>
-                    </el-card>
-                </el-col>
-                <el-col :span="12">
-                    <el-card shadow="hover" class="action-card bg-purple" @click="$router.push('/home/profile')">
-                        <h3>🛡️ 更新资质档案</h3>
-                        <p>完善资料，获取更多客户信任</p>
-                    </el-card>
-                </el-col>
-            </el-row>
-
-        </div>
+  <section class="welcome-page">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Daily Overview</p>
+        <h2>{{ greeting }}，{{ username || '用户' }}</h2>
+        <p>{{ introText }}</p>
+      </div>
+      <div class="hero-card">
+        <span>{{ roleName }}</span>
+        <strong>{{ actionHint }}</strong>
+      </div>
     </div>
+
+    <div class="shortcut-grid">
+      <el-card v-for="item in shortcuts" :key="item.title" shadow="hover" class="shortcut-card" @click="router.push(item.path)">
+        <p>{{ item.tag }}</p>
+        <h3>{{ item.title }}</h3>
+        <span>{{ item.desc }}</span>
+      </el-card>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../store/user'
-import { Stamp, List, Grid } from '@element-plus/icons-vue'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const username = ref(userStore.username || '用户')
-const role = ref(userStore.userRole)
+const username = computed(() => userStore.username)
+const role = computed(() => userStore.userRole)
 
-// 智能时间问候语
-const timeGreeting = computed(() => {
-    const hour = new Date().getHours()
-    if (hour < 6) return '凌晨好'
-    if (hour < 9) return '早上好'
-    if (hour < 12) return '上午好'
-    if (hour < 14) return '中午好'
-    if (hour < 18) return '下午好'
-    if (hour < 22) return '晚上好'
-    return '夜深了，注意休息'
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return '上午好'
+  if (hour < 18) return '下午好'
+  return '晚上好'
 })
+
+const roleName = computed(() => ({
+  '1': '平台管理员',
+  '2': '客户',
+  '3': '服务人员'
+}[role.value] || '成员'))
+
+const introText = computed(() => ({
+  '1': '这里集中承接订单、售后、日志和数据分析能力，适合作为论文中的系统总控台。',
+  '2': '你可以从这里继续预约、支付未完成订单、查看进度并发起售后。',
+  '3': '这里是你的接单与履约工作台，可以查看待接单、同步进度并与客户沟通。'
+}[role.value] || '欢迎回到平台。'))
+
+const actionHint = computed(() => ({
+  '1': '重点关注待处理售后与支付转化',
+  '2': '优先完成待支付和待验收订单',
+  '3': '及时更新上门进度，减少沟通成本'
+}[role.value] || '开始今天的工作'))
+
+const shortcuts = computed(() => ({
+  '1': [
+    { tag: 'Orders', title: '订单管理', desc: '查看支付、履约、售后联动全链路', path: '/home/orders-manage' },
+    { tag: 'Analytics', title: '数据分析', desc: '监控收入、满意度和售后情况', path: '/home/dashboard' },
+    { tag: 'Audit', title: '操作日志', desc: '验证系统可追溯性与关键操作记录', path: '/home/operation-logs' }
+  ],
+  '2': [
+    { tag: 'Book', title: '立即预约', desc: '选择服务、地址和支付方式完成下单', path: '/home/services' },
+    { tag: 'Orders', title: '我的订单', desc: '继续支付、查看进度、发送沟通消息', path: '/home/customer-orders' },
+    { tag: 'After-sale', title: '售后反馈', desc: '问题留痕并跟踪管理员处理结果', path: '/home/after-sale' }
+  ],
+  '3': [
+    { tag: 'Work', title: '订单工作台', desc: '抢单、接单、更新进度并完成服务', path: '/home/professional-orders' },
+    { tag: 'Profile', title: '资料档案', desc: '保持认证信息完整，提升接单效率', path: '/home/profile' }
+  ]
+}[role.value] || []))
 </script>
 
 <style scoped>
-.welcome-container {
-    padding: 10px;
+.welcome-page {
+  display: grid;
+  gap: 22px;
 }
 
-.welcome-banner {
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+.hero {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr;
+  gap: 18px;
 }
 
-.greeting-box {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+.hero,
+.shortcut-card {
+  border-radius: 28px;
 }
 
-.user-avatar {
-    background: #409EFF;
-    font-size: 24px;
-    font-weight: bold;
+.hero > div {
+  background: linear-gradient(135deg, #0f766e, #164e63);
+  color: #fff;
+  padding: 28px;
 }
 
-.greeting-text h2 {
-    margin: 0 0 5px 0;
-    color: #303133;
+.hero-card {
+  display: grid;
+  align-content: space-between;
 }
 
-.greeting-text p {
-    margin: 0;
-    color: #909399;
-    font-size: 14px;
+.hero h2 {
+  margin: 8px 0 12px;
+  font-size: 34px;
 }
 
-/* 管理员数据卡片 */
-.data-card {
-    display: flex;
-    align-items: center;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    border: none;
+.hero p:last-child {
+  margin: 0;
+  line-height: 1.7;
+  max-width: 720px;
 }
 
-.data-card:hover {
-    transform: translateY(-5px);
+.eyebrow {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 12px;
 }
 
-.card-icon {
-    font-size: 40px;
-    margin-right: 15px;
+.hero-card span {
+  color: rgba(255, 255, 255, 0.72);
 }
 
-.card-info .title {
-    font-size: 18px;
-    font-weight: bold;
-    color: #303133;
+.hero-card strong {
+  font-size: 24px;
+  line-height: 1.4;
 }
 
-.card-info .desc {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 5px;
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
 }
 
-/* 客户/师傅快捷卡片 */
-.action-card {
-    border-radius: 10px;
-    color: white;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.2s;
-    height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 20px;
+.shortcut-card {
+  cursor: pointer;
+  border: 0;
 }
 
-.action-card:hover {
-    transform: scale(1.02);
+.shortcut-card p {
+  margin: 0 0 10px;
+  color: #0f766e;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
-.action-card h3 {
-    margin: 0 0 10px 0;
-    font-size: 20px;
+.shortcut-card h3 {
+  margin: 0 0 8px;
 }
 
-.action-card p {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.9;
+.shortcut-card span {
+  color: #64748b;
+  line-height: 1.6;
 }
 
-/* 炫彩渐变背景 */
-.bg-blue {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.bg-green {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.bg-orange {
-    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-}
-
-.bg-purple {
-    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -2,6 +2,8 @@ import request from '../utils/request'
 
 export const createOrderAPI = (data) => request.post('/orders', data)
 
+export const payOrderAPI = (orderId, data) => request.patch(`/orders/${orderId}/payment`, data)
+
 export const getMyOrdersAPI = () => request.get('/orders')
 
 export const cancelOrderAPI = (orderId) => request.patch(`/orders/${orderId}/cancel`)
@@ -17,6 +19,10 @@ export const rejectOrderAPI = (orderId) => request.patch(`/orders/${orderId}/rej
 export const getOrderProgressAPI = (orderId) => request.get(`/orders/${orderId}/progress`)
 
 export const updateOrderProgressAPI = (orderId, data) => request.post(`/orders/${orderId}/progress`, data)
+
+export const getOrderMessagesAPI = (orderId) => request.get(`/orders/${orderId}/messages`)
+
+export const sendOrderMessageAPI = (orderId, data) => request.post(`/orders/${orderId}/messages`, data)
 
 export const getAllOrdersAdminAPI = () => request.get('/orders/admin/all')
 

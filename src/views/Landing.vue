@@ -1,368 +1,309 @@
 <template>
-    <div class="landing-container">
-        <header class="navbar">
-            <div class="logo">
-                <el-icon class="logo-icon">
-                    <House />
-                </el-icon>
-                <span>Euler 家政服务平台</span>
-            </div>
-            <div class="nav-actions">
-                <el-button type="primary" plain round @click="$router.push('/login')">登录 / 注册</el-button>
-                <el-button type="primary" round @click="$router.push('/login')">师傅入驻</el-button>
-            </div>
-        </header>
+  <div class="landing-page">
+    <header class="navbar">
+      <div>
+        <p class="eyebrow">HomeService</p>
+        <h1>家政服务预约与运营管理平台</h1>
+      </div>
+      <div class="nav-actions">
+        <el-button plain @click="$router.push('/login')">登录 / 注册</el-button>
+        <el-button type="primary" @click="$router.push('/login')">开始体验</el-button>
+      </div>
+    </header>
 
-        <section class="hero-section">
-            <div class="hero-content">
-                <h1 class="title">专业、便捷、放心的到家服务</h1>
-                <p class="subtitle">严格甄选金牌师傅，全方位保障服务质量，让您的生活更轻松、更美好。</p>
-                <el-button type="primary" size="large" round class="action-btn" @click="$router.push('/login')">
-                    立即预约体验
-                </el-button>
-            </div>
-        </section>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Full Workflow</p>
+        <h2>从预约、支付、接单、沟通到售后与报表，一套系统完整闭环。</h2>
+        <p>
+          面向毕业设计与课程项目场景，系统同时覆盖客户、服务人员与管理员三类角色，
+          强调订单协同、服务透明化和运营分析。
+        </p>
+        <div class="hero-actions">
+          <el-button size="large" type="primary" @click="$router.push('/login')">立即预约</el-button>
+          <el-button size="large" plain @click="$router.push('/login')">服务人员入驻</el-button>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div>
+          <span>3 角色协同</span>
+          <strong>客户 / 服务人员 / 管理员</strong>
+        </div>
+        <div>
+          <span>4 条核心链路</span>
+          <strong>预约、履约、售后、分析</strong>
+        </div>
+      </div>
+    </section>
 
-        <section class="services-section">
-            <h2 class="section-title">我们的服务</h2>
-            <p class="section-desc">涵盖您生活中的方方面面</p>
+    <section class="section">
+      <div class="section-title">
+        <p class="eyebrow">Services</p>
+        <h3>服务目录</h3>
+      </div>
+      <div class="service-grid" v-loading="loadingServices">
+        <el-card v-for="service in serviceList" :key="service.id" shadow="hover" class="service-card">
+          <p>服务项目</p>
+          <h4>{{ service.serviceName }}</h4>
+          <span>{{ service.description || '标准化上门服务，支持预约与进度追踪。' }}</span>
+          <strong>¥ {{ service.basePrice }}</strong>
+        </el-card>
+      </div>
+    </section>
 
-            <div v-loading="loadingServices">
-                <el-row :gutter="30" class="service-grid">
-                    <el-col :span="6" v-for="service in serviceList" :key="service.id" class="service-col">
-                        <el-card shadow="hover" class="service-card" @click="handleActionClick">
-                            <div class="service-icon-wrapper">
-                                <el-icon class="service-icon">
-                                    <Service />
-                                </el-icon>
-                            </div>
-                            <h3 class="service-name">{{ service.serviceName }}</h3>
-                            <p class="service-desc">{{ service.description || '提供优质的专业服务，解决您的烦恼。' }}</p>
-                            <div class="service-price">
-                                指导价 <span>¥ {{ service.basePrice }}</span> 起
-                            </div>
-                        </el-card>
-                    </el-col>
-                </el-row>
-                <el-empty v-if="serviceList.length === 0 && !loadingServices" description="平台服务正在上架中..." />
-            </div>
-        </section>
+    <section class="section soft">
+      <div class="section-title">
+        <p class="eyebrow">Professionals</p>
+        <h3>优选服务人员</h3>
+      </div>
+      <div class="pro-grid" v-loading="loadingPros">
+        <el-card v-for="pro in professionalList" :key="pro.id" shadow="hover" class="pro-card">
+          <el-avatar :size="72">{{ pro.fullName?.charAt(0) || 'P' }}</el-avatar>
+          <h4>{{ pro.fullName }}</h4>
+          <p>{{ pro.address || '服务范围待完善' }}</p>
+          <div class="pro-tags">
+            <el-tag round>{{ pro.experienceYears }} 年经验</el-tag>
+            <el-tag round type="success">评分 {{ pro.rating || 5 }}</el-tag>
+          </div>
+        </el-card>
+      </div>
+    </section>
 
-        <section class="professionals-section">
-            <h2 class="section-title">严选金牌师傅</h2>
-            <p class="section-desc">实名认证 · 技能考核 · 真实评价</p>
-
-            <div v-loading="loadingPros">
-                <el-row :gutter="30" class="pro-grid">
-                    <el-col :span="6" v-for="pro in professionalList" :key="pro.id" class="pro-col">
-                        <el-card shadow="hover" class="pro-card" @click="handleActionClick">
-                            <div class="pro-avatar-wrapper">
-                                <el-avatar :size="80" :src="pro.certFileUrl" class="pro-avatar">
-                                    {{ pro.fullName?.charAt(0) }}
-                                </el-avatar>
-                            </div>
-                            <h3 class="pro-name">{{ pro.fullName }} 师傅</h3>
-
-                            <div class="pro-tags">
-                                <el-tag size="small" type="success" effect="plain" round>{{ pro.experienceYears }}
-                                    年经验</el-tag>
-                                <el-tag size="small" type="warning" effect="dark" round
-                                    style="margin-left: 8px;">平台认证</el-tag>
-                            </div>
-
-                            <div class="pro-rating">
-                                <el-rate v-model="pro.rating" disabled show-score text-color="#ff9900"
-                                    score-template="{value} 分" />
-                            </div>
-                            <p class="pro-address"><el-icon>
-                                    <Location />
-                                </el-icon> 常驻：{{ pro.address }}</p>
-                        </el-card>
-                    </el-col>
-                </el-row>
-                <el-empty v-if="professionalList.length === 0 && !loadingPros" description="优质师傅正在招募中..." />
-            </div>
-        </section>
-
-        <footer class="footer">
-            <p>© 2026 Euler Housekeeping Service. All rights reserved.</p>
-        </footer>
-    </div>
+    <section class="section trust">
+      <el-card shadow="never">
+        <div class="trust-grid">
+          <div>
+            <p class="eyebrow">Trust</p>
+            <h3>为什么适合论文展示</h3>
+          </div>
+          <ul>
+            <li>支持 JWT 鉴权与角色隔离。</li>
+            <li>支持订单进度、沟通留言和售后闭环。</li>
+            <li>支持统计看板、导出报表与操作日志。</li>
+          </ul>
+        </div>
+      </el-card>
+    </section>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { House, Service, Location } from '@element-plus/icons-vue' // 新增了 Location 图标
-import request from '../utils/request'
-import { ElMessage } from 'element-plus'
+import { onMounted, ref } from 'vue'
+import request from '@/utils/request'
 
-const router = useRouter()
 const serviceList = ref([])
-const professionalList = ref([]) // 师傅列表
+const professionalList = ref([])
 const loadingServices = ref(false)
-const loadingPros = ref(false)   // 师傅加载状态
+const loadingPros = ref(false)
 
-// 获取公开的服务列表
 const fetchPublicServices = async () => {
-    loadingServices.value = true
-    try {
-        const res = await request.get('/services')
-        if (res.code === 200) serviceList.value = res.data
-    } catch (error) {
-        console.error('获取服务失败', error)
-    } finally {
-        loadingServices.value = false
+  loadingServices.value = true
+  try {
+    const res = await request.get('/services')
+    if (res.code === 200) {
+      serviceList.value = res.data
     }
+  } finally {
+    loadingServices.value = false
+  }
 }
 
-// 【新增】：获取推荐师傅列表
 const fetchPublicProfessionals = async () => {
-    loadingPros.value = true
-    try {
-        const res = await request.get('/professional/public/recommend')
-        if (res.code === 200) professionalList.value = res.data
-    } catch (error) {
-        console.error('获取推荐师傅失败', error)
-    } finally {
-        loadingPros.value = false
+  loadingPros.value = true
+  try {
+    const res = await request.get('/professional/public/recommend')
+    if (res.code === 200) {
+      professionalList.value = res.data
     }
+  } finally {
+    loadingPros.value = false
+  }
 }
 
 onMounted(() => {
-    fetchPublicServices()
-    fetchPublicProfessionals() // 页面加载时同时获取
+  fetchPublicServices()
+  fetchPublicProfessionals()
 })
-
-// 统一的未登录拦截点击事件
-const handleActionClick = () => {
-    ElMessage.warning('请先登录后体验更多专属功能哦~')
-    router.push('/login')
-}
 </script>
 
 <style scoped>
-.landing-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #f8f9fa;
+.landing-page {
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 22%),
+    linear-gradient(180deg, #fffdf7 0%, #eef8ff 100%);
 }
 
-/* 导航与横幅 */
+.navbar,
+.hero,
+.section {
+  max-width: 1240px;
+  margin: 0 auto 28px;
+}
+
 .navbar {
-    height: 70px;
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 10%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    font-size: 22px;
-    font-weight: bold;
-    color: #409EFF;
+.navbar h1 {
+  margin: 8px 0 0;
+  font-size: 24px;
 }
 
-.logo-icon {
-    font-size: 28px;
-    margin-right: 10px;
+.nav-actions {
+  display: flex;
+  gap: 12px;
 }
 
-.hero-section {
-    height: 500px;
-    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: white;
-    padding: 0 20px;
+.eyebrow {
+  margin: 0;
+  color: #0f766e;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 12px;
 }
 
-.hero-content {
-    max-width: 800px;
+.hero {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
 }
 
-.hero-content .title {
-    font-size: 48px;
-    margin-bottom: 20px;
-    font-weight: 800;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.hero > div {
+  padding: 34px;
+  border-radius: 32px;
 }
 
-.hero-content .subtitle {
-    font-size: 18px;
-    margin-bottom: 40px;
-    opacity: 0.9;
-    line-height: 1.6;
+.hero > div:first-child {
+  background: linear-gradient(135deg, #0f766e, #134e4a);
+  color: #fff;
 }
 
-.action-btn {
-    font-size: 18px;
-    padding: 12px 30px;
-    height: auto;
-    box-shadow: 0 4px 15px rgba(64, 158, 255, 0.4);
+.hero h2 {
+  margin: 10px 0 18px;
+  font-size: clamp(38px, 5vw, 60px);
+  line-height: 1.06;
 }
 
-/* 公共区块标题 */
+.hero p:last-of-type {
+  margin: 0;
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.hero-card {
+  display: grid;
+  gap: 16px;
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.hero-card div {
+  padding: 18px;
+  border-radius: 20px;
+  background: #f8fafc;
+}
+
+.hero-card span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.hero-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+}
+
 .section-title {
-    text-align: center;
-    font-size: 32px;
-    color: #303133;
-    margin-bottom: 10px;
+  margin-bottom: 18px;
 }
 
-.section-desc {
-    text-align: center;
-    color: #909399;
-    margin-bottom: 50px;
-    font-size: 16px;
+.section-title h3 {
+  margin: 8px 0 0;
+  font-size: 28px;
 }
 
-/* 服务区 */
-.services-section {
-    padding: 60px 10%;
-    background-color: #fff;
+.service-grid,
+.pro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
 }
 
-.service-col {
-    margin-bottom: 30px;
-}
-
-.service-card {
-    text-align: center;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    height: 100%;
-    border: none;
-    background: #fdfdfd;
-}
-
-.service-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
-}
-
-.service-icon-wrapper {
-    width: 60px;
-    height: 60px;
-    background-color: #ecf5ff;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto 20px;
-}
-
-.service-icon {
-    font-size: 30px;
-    color: #409EFF;
-}
-
-.service-name {
-    font-size: 18px;
-    margin: 0 0 10px;
-    color: #303133;
-}
-
-.service-desc {
-    font-size: 13px;
-    color: #909399;
-    margin-bottom: 20px;
-    line-height: 1.5;
-}
-
-.service-price {
-    font-size: 14px;
-    color: #606266;
-}
-
-.service-price span {
-    color: #F56C6C;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-/* 师傅展示区 (新增) */
-.professionals-section {
-    padding: 60px 10%;
-    background-color: #f8f9fa;
-}
-
-.pro-col {
-    margin-bottom: 30px;
-}
-
+.service-card,
 .pro-card {
-    text-align: center;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    height: 100%;
+  border-radius: 24px;
 }
 
-.pro-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+.service-card p,
+.pro-card p {
+  margin: 0 0 10px;
+  color: #0f766e;
 }
 
-.pro-avatar-wrapper {
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
+.service-card h4,
+.pro-card h4 {
+  margin: 0 0 8px;
 }
 
-.pro-avatar {
-    border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    font-size: 30px;
-    background: #a0cfff;
+.service-card span,
+.pro-card span {
+  color: #64748b;
+  line-height: 1.6;
 }
 
-.pro-name {
-    font-size: 18px;
-    font-weight: bold;
-    color: #303133;
-    margin: 0 0 10px;
+.service-card strong {
+  display: block;
+  margin-top: 18px;
+  font-size: 24px;
+}
+
+.soft .pro-card {
+  text-align: center;
 }
 
 .pro-tags {
-    margin-bottom: 15px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
 }
 
-.pro-rating {
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
+.trust-grid {
+  display: grid;
+  grid-template-columns: 0.7fr 1fr;
+  gap: 18px;
+  align-items: center;
 }
 
-.pro-address {
-    font-size: 13px;
-    color: #909399;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    margin: 0;
+.trust ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 2;
 }
 
-/* 页脚 */
-.footer {
-    text-align: center;
-    padding: 30px 0;
-    background-color: #2c3e50;
-    color: #95a5a6;
-    font-size: 14px;
+@media (max-width: 900px) {
+  .hero,
+  .trust-grid,
+  .navbar {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .nav-actions,
+  .hero-actions {
+    flex-wrap: wrap;
+  }
 }
 </style>

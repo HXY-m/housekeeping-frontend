@@ -15,6 +15,7 @@ const AddressManage = () => import('@/views/AddressManage.vue')
 const AuditManage = () => import('@/views/AuditManage.vue')
 const AfterSaleList = () => import('@/views/AfterSaleList.vue')
 const AfterSaleManage = () => import('@/views/AfterSaleManage.vue')
+const OperationLog = () => import('@/views/OperationLog.vue')
 const Welcome = () => import('@/views/Welcome.vue')
 const Landing = () => import('@/views/Landing.vue')
 
@@ -58,7 +59,8 @@ const router = createRouter({
         { path: 'orders-manage', name: 'OrderManage', component: OrderManage, meta: { roles: ['1'] } },
         { path: 'address', name: 'AddressManage', component: AddressManage, meta: { roles: ['2'] } },
         { path: 'audit-manage', name: 'AuditManage', component: AuditManage, meta: { roles: ['1'] } },
-        { path: 'after-sale-manage', name: 'AfterSaleManage', component: AfterSaleManage, meta: { roles: ['1'] } }
+        { path: 'after-sale-manage', name: 'AfterSaleManage', component: AfterSaleManage, meta: { roles: ['1'] } },
+        { path: 'operation-logs', name: 'OperationLog', component: OperationLog, meta: { roles: ['1'] } }
       ]
     }
   ]
