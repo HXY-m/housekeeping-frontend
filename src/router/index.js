@@ -1,18 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Login from '@/views/Login.vue'
-import Home from '@/views/Home.vue'
-import ServiceList from '@/views/ServiceList.vue'
-import CustomerOrders from '@/views/CustomerOrders.vue';
-import ProfessionalOrders from '@/views/ProfessionalOrders.vue';
-import AdminDashboard from '@/views/AdminDashboard.vue';
-import ServiceManage from '@/views/ServiceManage.vue';
-import UserManage from '@/views/UserManage.vue';
-import Profile from '@/views/Profile.vue';
-import OrderManage from '@/views/OrderManage.vue';
-import AddressManage from '@/views/AddressManage.vue';
-import AuditManage from '@/views/AuditManage.vue'
-import Welcome from '@/views/Welcome.vue';
-import Landing from '@/views/Landing.vue';
+import { useUserStore } from '@/store/user'
+
+const Login = () => import('@/views/Login.vue')
+const Home = () => import('@/views/Home.vue')
+const ServiceList = () => import('@/views/ServiceList.vue')
+const CustomerOrders = () => import('@/views/CustomerOrders.vue')
+const ProfessionalOrders = () => import('@/views/ProfessionalOrders.vue')
+const AdminDashboard = () => import('@/views/AdminDashboard.vue')
+const ServiceManage = () => import('@/views/ServiceManage.vue')
+const UserManage = () => import('@/views/UserManage.vue')
+const Profile = () => import('@/views/Profile.vue')
+const OrderManage = () => import('@/views/OrderManage.vue')
+const AddressManage = () => import('@/views/AddressManage.vue')
+const AuditManage = () => import('@/views/AuditManage.vue')
+const AfterSaleList = () => import('@/views/AfterSaleList.vue')
+const AfterSaleManage = () => import('@/views/AfterSaleManage.vue')
+const Welcome = () => import('@/views/Welcome.vue')
+const Landing = () => import('@/views/Landing.vue')
+
+const roleHomeMap = {
+  '1': '/home/dashboard',
+  '2': '/home/services',
+  '3': '/home/professional-orders'
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,78 +30,57 @@ const router = createRouter({
     {
       path: '/',
       name: 'Landing',
-      component: Landing // 【修改】：让根路径直接展示官网首页
+      component: Landing,
+      meta: { public: true }
     },
-    // 配置登录页路由
     {
       path: '/login',
       name: 'Login',
-      component: Login
+      component: Login,
+      meta: { public: true }
     },
     {
       path: '/home',
       name: 'Home',
       component: Home,
+      meta: { requiresAuth: true },
       redirect: '/home/welcome',
       children: [
-        {
-          path: 'welcome', // 3. 【核心新增】：配置欢迎页的子路由
-          name: 'Welcome',
-          component: Welcome
-        },
-        {
-          path: 'services',
-          name: 'ServiceList',
-          component: ServiceList
-        },
-        {
-          path: 'customer-orders',
-          name: 'CustomerOrders',
-          component: CustomerOrders
-        },
-        {
-          path: 'professional-orders',
-          name: 'ProfessionalOrders',
-          component: ProfessionalOrders
-        },
-        {
-          path: 'dashboard',
-          name: 'AdminDashboard',
-          component: AdminDashboard
-        },
-        {
-          path: 'services-manage',
-          name: 'ServiceManage',
-          component: ServiceManage
-        },
-        {
-          path: 'users-manage',
-          name: 'UserManage',
-          component: UserManage
-        },
-        {
-          path: 'profile',
-          name: 'Profile',
-          component: Profile
-        },
-        {
-          path: 'orders-manage',
-          name: 'OrderManage',
-          component: OrderManage
-        },
-        {
-          path: 'address',
-          name: 'AddressManage',
-          component: AddressManage
-        },
-        {
-          path: 'audit-manage',
-          name: 'AuditManage',
-          component: AuditManage
-        }
+        { path: 'welcome', name: 'Welcome', component: Welcome },
+        { path: 'services', name: 'ServiceList', component: ServiceList, meta: { roles: ['2'] } },
+        { path: 'customer-orders', name: 'CustomerOrders', component: CustomerOrders, meta: { roles: ['2'] } },
+        { path: 'after-sale', name: 'AfterSaleList', component: AfterSaleList, meta: { roles: ['2'] } },
+        { path: 'professional-orders', name: 'ProfessionalOrders', component: ProfessionalOrders, meta: { roles: ['3'] } },
+        { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard, meta: { roles: ['1'] } },
+        { path: 'services-manage', name: 'ServiceManage', component: ServiceManage, meta: { roles: ['1'] } },
+        { path: 'users-manage', name: 'UserManage', component: UserManage, meta: { roles: ['1'] } },
+        { path: 'profile', name: 'Profile', component: Profile },
+        { path: 'orders-manage', name: 'OrderManage', component: OrderManage, meta: { roles: ['1'] } },
+        { path: 'address', name: 'AddressManage', component: AddressManage, meta: { roles: ['2'] } },
+        { path: 'audit-manage', name: 'AuditManage', component: AuditManage, meta: { roles: ['1'] } },
+        { path: 'after-sale-manage', name: 'AfterSaleManage', component: AfterSaleManage, meta: { roles: ['1'] } }
       ]
     }
   ]
+})
+
+router.beforeEach((to) => {
+  const userStore = useUserStore()
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const isPublicRoute = to.matched.some((record) => record.meta.public)
+  const allowedRoles = to.matched.map((record) => record.meta.roles).find((roles) => Array.isArray(roles))
+
+  if (requiresAuth && !userStore.token) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.path === '/login' && userStore.token) {
+    return roleHomeMap[userStore.userRole] || '/home/welcome'
+  }
+
+  if (!isPublicRoute && allowedRoles && !allowedRoles.includes(userStore.userRole)) {
+    return roleHomeMap[userStore.userRole] || '/home/welcome'
+  }
 })
 
 export default router

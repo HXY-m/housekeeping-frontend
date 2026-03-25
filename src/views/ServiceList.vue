@@ -100,6 +100,7 @@ import request from '../utils/request'
 import { useUserStore } from '../store/user'
 import { getMyAddressesAPI } from '../api/address'
 import { getProfessionalsByServiceAPI } from '../api/profile';
+import { createOrderAPI } from '../api/order'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -215,10 +216,15 @@ const submitOrder = async () => {
         }
 
         // 这里调用你实际的下单API，例如：
-        const res = await request.post('/orders', orderData) 
+        const res = await createOrderAPI(orderData)
+        if (res.code !== 200) {
+            ElMessage.error(res.message || '预约失败')
+            return
+        }
 
         ElMessage.success(selectedProfessionalId.value ? '🎉 指定师傅下单成功！请等待师傅确认。' : '🎉 订单提交成功！正在为您寻找师傅。')
         checkoutDialogVisible.value = false
+        router.push('/home/customer-orders')
 
     } catch (error) {
         console.error('下单异常', error)

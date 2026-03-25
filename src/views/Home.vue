@@ -1,6 +1,5 @@
 <template>
     <div class="home-container" :class="themeClass">
-
         <aside class="sidebar">
             <div class="logo">
                 <span class="logo-text">{{ platformTitle }}</span>
@@ -8,67 +7,48 @@
 
             <ul class="menu">
                 <li @click="router.push('/home/welcome')" :class="{ active: currentPath === '/home/welcome' }">
-                    <el-icon>
-                        <Monitor />
-                    </el-icon> 欢迎页
+                    <el-icon><Monitor /></el-icon> 欢迎页
                 </li>
+
                 <template v-if="role === '2'">
                     <li @click="router.push('/home/services')" :class="{ active: currentPath === '/home/services' }">
-                        <el-icon>
-                            <ShoppingTrolley />
-                        </el-icon> 预约服务
+                        <el-icon><ShoppingTrolley /></el-icon> 预约服务
                     </li>
-                    <li @click="router.push('/home/customer-orders')"
-                        :class="{ active: currentPath === '/home/customer-orders' }">
-                        <el-icon>
-                            <Tickets />
-                        </el-icon> 我的订单
+                    <li @click="router.push('/home/customer-orders')" :class="{ active: currentPath === '/home/customer-orders' }">
+                        <el-icon><Tickets /></el-icon> 我的订单
+                    </li>
+                    <li @click="router.push('/home/after-sale')" :class="{ active: currentPath === '/home/after-sale' }">
+                        <el-icon><List /></el-icon> 售后反馈
                     </li>
                     <li @click="router.push('/home/address')" :class="{ active: currentPath === '/home/address' }">
-                        <el-icon>
-                            <Location />
-                        </el-icon> 我的地址
+                        <el-icon><Location /></el-icon> 我的地址
                     </li>
                 </template>
 
                 <template v-if="role === '3'">
-                    <li @click="router.push('/home/professional-orders')"
-                        :class="{ active: currentPath === '/home/professional-orders' }">
-                        <el-icon>
-                            <Briefcase />
-                        </el-icon> 师傅工作台
+                    <li @click="router.push('/home/professional-orders')" :class="{ active: currentPath === '/home/professional-orders' }">
+                        <el-icon><Briefcase /></el-icon> 师傅工作台
                     </li>
                 </template>
 
                 <template v-if="role === '1'">
                     <li @click="router.push('/home/dashboard')" :class="{ active: currentPath === '/home/dashboard' }">
-                        <el-icon>
-                            <DataLine />
-                        </el-icon> 数据控制台
+                        <el-icon><DataLine /></el-icon> 数据控制台
                     </li>
-                    <li @click="router.push('/home/services-manage')"
-                        :class="{ active: currentPath === '/home/services-manage' }">
-                        <el-icon>
-                            <SetUp />
-                        </el-icon> 服务管理
+                    <li @click="router.push('/home/services-manage')" :class="{ active: currentPath === '/home/services-manage' }">
+                        <el-icon><SetUp /></el-icon> 服务管理
                     </li>
-                    <li @click="router.push('/home/users-manage')"
-                        :class="{ active: currentPath === '/home/users-manage' }">
-                        <el-icon>
-                            <User />
-                        </el-icon> 用户管理
+                    <li @click="router.push('/home/users-manage')" :class="{ active: currentPath === '/home/users-manage' }">
+                        <el-icon><User /></el-icon> 用户管理
                     </li>
-                    <li @click="router.push('/home/orders-manage')"
-                        :class="{ active: currentPath === '/home/orders-manage' }">
-                        <el-icon>
-                            <List />
-                        </el-icon> 订单管理
+                    <li @click="router.push('/home/orders-manage')" :class="{ active: currentPath === '/home/orders-manage' }">
+                        <el-icon><Tickets /></el-icon> 订单管理
                     </li>
-                    <li @click="router.push('/home/audit-manage')"
-                        :class="{ active: currentPath === '/home/audit-manage' }">
-                        <el-icon>
-                            <Stamp />
-                        </el-icon> 资质审核
+                    <li @click="router.push('/home/audit-manage')" :class="{ active: currentPath === '/home/audit-manage' }">
+                        <el-icon><Stamp /></el-icon> 资质审核
+                    </li>
+                    <li @click="router.push('/home/after-sale-manage')" :class="{ active: currentPath === '/home/after-sale-manage' }">
+                        <el-icon><List /></el-icon> 售后处理
                     </li>
                 </template>
             </ul>
@@ -76,36 +56,27 @@
 
         <div class="main-wrapper">
             <header class="top-header">
-                <div class="header-left">
-                </div>
-
+                <div class="header-left"></div>
                 <div class="header-right">
                     <el-tag :type="roleTagType" effect="dark" round size="small" style="margin-right: 15px;">
                         {{ roleName }}
                     </el-tag>
 
                     <el-dropdown trigger="click">
-                        <span class="user-dropdown-link"
-                            style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--header-text-color, #303133);">
+                        <span class="user-dropdown-link" style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--header-text-color, #303133);">
                             <el-avatar :size="32" style="background: #409EFF;">
                                 {{ username ? username.charAt(0).toUpperCase() : 'U' }}
                             </el-avatar>
                             {{ username }}
-                            <el-icon>
-                                <CaretBottom />
-                            </el-icon>
+                            <el-icon><CaretBottom /></el-icon>
                         </span>
                         <template #dropdown>
                             <el-dropdown-menu>
                                 <el-dropdown-item @click="router.push('/home/profile')">
-                                    <el-icon>
-                                        <User />
-                                    </el-icon> 个人中心
+                                    <el-icon><User /></el-icon> 个人中心
                                 </el-dropdown-item>
                                 <el-dropdown-item divided style="color: #F56C6C;" @click="handleLogout">
-                                    <el-icon>
-                                        <SwitchButton />
-                                    </el-icon> 退出系统
+                                    <el-icon><SwitchButton /></el-icon> 退出系统
                                 </el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
@@ -121,25 +92,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-// 引入 Element Plus 的图标 (加入了下拉箭头、退出开关等图标)
 import {
     ShoppingTrolley, Tickets, Briefcase, DataLine,
-    SetUp, User, CaretBottom, SwitchButton, Monitor
+    SetUp, User, CaretBottom, SwitchButton, Monitor, List, Location, Stamp
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../store/user'
-const userStore = useUserStore()
 
+const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
+
 const username = computed(() => userStore.username)
 const role = computed(() => userStore.userRole)
-
-// 获取当前路径，用于菜单高亮
 const currentPath = computed(() => route.path)
 
-// 1. 动态计算主题类名
 const themeClass = computed(() => {
     if (role.value === '1') return 'theme-admin'
     if (role.value === '2') return 'theme-customer'
@@ -147,23 +115,20 @@ const themeClass = computed(() => {
     return ''
 })
 
-// 2. 动态计算左上角 Logo 标题
 const platformTitle = computed(() => {
-    if (role.value === '1') return '家政运营总控后台'
-    if (role.value === '2') return '✨ 悦享家政服务平台'
-    if (role.value === '3') return '🛠️ 师傅接单中心'
+    if (role.value === '1') return '家政运营管理后台'
+    if (role.value === '2') return '家政服务预约平台'
+    if (role.value === '3') return '师傅接单中心'
     return '家政服务平台'
 })
 
-// 3. 动态角色名
 const roleName = computed(() => {
     if (role.value === '1') return '管理员'
-    if (role.value === '2') return '尊贵客户'
-    if (role.value === '3') return '金牌师傅'
+    if (role.value === '2') return '客户'
+    if (role.value === '3') return '服务人员'
     return '未知角色'
 })
 
-// 4. 动态 Tag 颜色
 const roleTagType = computed(() => {
     if (role.value === '1') return 'danger'
     if (role.value === '2') return 'primary'
@@ -171,26 +136,19 @@ const roleTagType = computed(() => {
     return 'info'
 })
 
-// 初始化：从缓存读取凭证，防丢失
 onMounted(() => {
-    // ✅ 直接找 Pinia 仓库要数据
-    if (userStore.username && userStore.userRole) {
-        // 凭证都在，完美放行！（不需要再手动赋值了，因为上面用了 computed）
-    } else {
-        // 仓库是空的，说明没登录，无情踢回登录页
+    if (!userStore.username || !userStore.userRole) {
         router.push('/login')
     }
 })
 
-// 退出登录
 const handleLogout = () => {
-    userStore.clearUserInfo() // 一键清空缓存
+    userStore.clearUserInfo()
     router.push('/login')
 }
 </script>
 
 <style scoped>
-/* ================= 基础骨架样式 ================= */
 .home-container {
     display: flex;
     height: 100vh;
@@ -257,7 +215,6 @@ const handleLogout = () => {
     align-items: center;
 }
 
-/* 消除下拉框默认的聚焦边框 */
 .user-dropdown-link:focus-visible {
     outline: none;
 }
@@ -268,7 +225,6 @@ const handleLogout = () => {
     overflow-y: auto;
 }
 
-/* ================= 1. 管理员主题 (深色科技风) ================= */
 .theme-admin .sidebar {
     background-color: #2b333e;
     color: #fff;
@@ -288,7 +244,6 @@ const handleLogout = () => {
     color: #fff;
 }
 
-/* ================= 2. 客户主题 (明亮白蓝 C端风) ================= */
 .theme-customer .sidebar {
     background-color: #ffffff;
     color: #303133;
@@ -321,7 +276,6 @@ const handleLogout = () => {
     font-weight: bold;
 }
 
-/* ================= 3. 师傅主题 (沉稳工装 蓝灰/薄荷绿) ================= */
 .theme-pro .sidebar {
     background-color: #34495e;
     color: #ecf0f1;
